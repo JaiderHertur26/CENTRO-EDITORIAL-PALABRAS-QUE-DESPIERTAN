@@ -45,3 +45,11 @@ Migraciones en `database/001_editorial.sql`, `database/001b_audit_fix.sql`, `dat
 
 ## Privacidad
 Las direcciones de correo de lectores aparecen **solo** en vistas administrativas autenticadas. No se publica esta información en la revista.
+
+## Sincronización de la revista con Meta (v1.1)
+
+El catálogo editorial conserva los 20 mensajes y sus 19 tarjetas futuras cotejadas con los originales (los originales en MENSAJES no se modifican). Para PD-002 a PD-013, la hora de Meta confirmada en el catálogo maestro es 19:00 Colombia y la revista se hace visible a las 18:55 de las respectivas fechas. Los siete mensajes restantes están completos y pendientes de programación en Meta.
+
+En **Enlaces para redes** hay un enlace canónico permanente por mensaje y una descripción preparada para copiar a Meta Business Suite. La aplicación no tiene autorización de escritura en las entradas ya programadas de Meta, por lo que no afirma haber modificado esas publicaciones externas. Las descripciones preparadas se conservaron también en GITHUB\\ENLACES_META_PARA_ACTUALIZAR.
+
+La migración privada `database/006_web_schedule_and_canonical.sql`, generada a partir de originales aprobados, fue aplicada a Supabase pero no se publica en GitHub porque contiene mensajes futuros aún no estrenados. La migración versionada `database/007_meta_synchronization.sql` incorpora el control temporal de cinco minutos, las funciones autenticadas de reprogramación y el recurso privado de enlaces. Las imágenes originales futuras se entregan solo cuando la obra ya es pública, incluso si se solicita su optimización.

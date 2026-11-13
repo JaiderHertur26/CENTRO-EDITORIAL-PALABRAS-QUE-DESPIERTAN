@@ -5,7 +5,7 @@ export type EditorialItem={
  summary:string;body?:string;state:"pending"|"scheduled"|"published";scheduled_at:string|null;
  published_at:string|null;approved_by_author:boolean;social_state:string;season:string|null;
  series:string|null;social_scheduled_at:string|null;cover_url:string|null;featured:boolean;position:number;updated_at:string;
- bible_reference:string;source_url:string|null;
+ bible_reference:string;source_url:string|null;canonical_url:string;
 };
 async function editorialRead(resource:"items"|"community"|"counts"|"audit",id?:string){
  const client=await sessionClient();

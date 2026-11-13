@@ -1,7 +1,7 @@
 "use client";
 import {useMemo,useState} from "react";
 import {useRouter} from "next/navigation";
-import {Search,Plus,Eye,EyeOff,Pencil,CalendarClock,X,Check,Loader2,ExternalLink,FileText,MessageCircle,MessagesSquare,ChevronRight,ShieldCheck} from "lucide-react";
+import {Search,Plus,Eye,EyeOff,Pencil,CalendarClock,Copy,Link2,X,Check,Loader2,ExternalLink,FileText,MessageCircle,MessagesSquare,ChevronRight,ShieldCheck} from "lucide-react";
 import type {EditorialItem} from "@/lib/data";
 
 type Kind="articulo"|"mensaje"|"tema";
@@ -27,6 +27,8 @@ export function Board({initial}:{initial:EditorialItem[]}){
  const [create,setCreate]=useState(false);
  const [newItem,setNewItem]=useState({kind:"articulo" as Kind,code:"",slug:"",title:"",body:"",summary:"",confirmApproval:false});
  const [schedule,setSchedule]=useState("");
+ const [metaSchedule,setMetaSchedule]=useState("");
+ const [editState,setEditState]=useState<"pending"|"published"|"scheduled">("pending");
  const [busy,setBusy]=useState("");
  const [error,setError]=useState("");
  const [success,setSuccess]=useState("");
@@ -46,6 +48,8 @@ export function Board({initial}:{initial:EditorialItem[]}){
    if(!r.ok)throw Error(j.error||"No se pudo abrir esta publicación");
    setEditor(j.item);
    setSchedule(datetimeLocal(j.item.scheduled_at));
+   setMetaSchedule(datetimeLocal(j.item.social_scheduled_at));
+   setEditState(j.item.state);
   }catch(e){setError(e instanceof Error?e.message:"No se pudo abrir");}
   finally{setBusy("");}
  }
@@ -72,7 +76,7 @@ export function Board({initial}:{initial:EditorialItem[]}){
   const form=document.querySelector<HTMLFormElement>("#edit-form");
   if(!form)return;
   const fd=new FormData(form);
-  const state=String(fd.get("state"));
+  const state=editState;
   const date=String(fd.get("scheduled_at")||"");
   const dt=state==="scheduled"&&date?new Date(date+":00-05:00").toISOString():null;
   if(state==="scheduled"&&!date){setError("Indica una fecha de publicación en horario de Colombia.");return;}
@@ -82,6 +86,26 @@ export function Board({initial}:{initial:EditorialItem[]}){
    cover_url:fd.get("cover_url")||null,bible_reference:String(fd.get("bible_reference")),
    change_note:String(fd.get("change_note")||"Cambios editoriales desde el Centro")
   });
+ }
+ async function copyCanonical(item:EditorialItem){
+  try{await navigator.clipboard.writeText(item.canonical_url);setSuccess("Enlace permanente copiado: "+item.canonical_url);}
+  catch{setError("No se pudo copiar el enlace desde este navegador.");}
+ }
+ async function programFromMeta(){
+  if(!editor||!metaSchedule){setError("Introduce la fecha y hora confirmadas de Meta.");return;}
+  const meta=new Date(metaSchedule+":00-05:00");
+  if(Number.isNaN(meta.getTime())){setError("Fecha de Meta inválida.");return;}
+  const release=new Date(meta.getTime()-300000);
+  if(!window.confirm("¿Confirmas que Facebook e Instagram están programados para "+dateCO(meta.toISOString())+"? La revista publicará este mensaje automáticamente a las "+dateCO(release.toISOString())+"."))return;
+  setBusy(editor.id);setError("");setSuccess("");
+  try{
+   const response=await fetch("/api/programar-meta",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({id:editor.id,metaAt:meta.toISOString(),updatedAt:editor.updated_at})});
+   const json=await response.json();
+   if(!response.ok)throw Error(json.error||"No se pudo programar");
+   setEditor(null);setSuccess("Mensaje sincronizado: la web publicará exactamente 5 minutos antes que Meta.");
+   router.refresh();
+  }catch(err){setError(err instanceof Error?err.message:"No se pudo programar");}
+  finally{setBusy("");}
  }
  async function addItem(){
   setBusy("new");setError("");setSuccess("");
@@ -114,6 +138,7 @@ export function Board({initial}:{initial:EditorialItem[]}){
     <div><span className={"state "+(canShow(item)?"visible":item.state)}><span className="state-dot"/>{canShow(item)?"Visible":stat[item.state]}</span></div>
     <span className="schedule-date">{item.state==="scheduled"?dateCO(item.scheduled_at):item.state==="published"?dateCO(item.published_at):"Sin fecha de publicación"}</span>
     <div className="item-actions">
+     <button className="icon-button" type="button" title="Copiar enlace permanente" aria-label={"Copiar enlace de "+item.code} onClick={()=>void copyCanonical(item)}><Copy size={16}/></button>
      <button className="icon-button" type="button" title="Editar y programar" aria-label={"Editar "+item.code} onClick={()=>void loadItem(item.id)}>{busy===item.id?<Loader2 size={17}/>:<Pencil size={17}/>}</button>
      <button className={"visibility-button "+(canShow(item)?"on":"")} disabled={busy===item.id} type="button" onClick={()=>void toggle(item)} aria-label={canShow(item)?"Ocultar "+item.code:"Mostrar "+item.code}>{canShow(item)?<Eye size={16}/>:<EyeOff size={16}/>}<span>{canShow(item)?"Retirar":"Publicar"}</span></button>
     </div>
@@ -135,7 +160,9 @@ export function Board({initial}:{initial:EditorialItem[]}){
       <p className="form-hint">La nueva obra comenzará en Pendientes. No aparecerá públicamente hasta que la publiques.</p>
       <div className="dialog-actions"><button type="button" className="muted-button" onClick={()=>setCreate(false)}>Cancelar</button><button className="gold-button" type="submit" disabled={busy==="new"}>Guardar borrador <Check size={16}/></button></div>
      </form>:editor&&<form id="edit-form" className="edit-form" onSubmit={e=>{e.preventDefault();void saveEditor();}}>
-      <div className="form-two"><label>Estado<select name="state" defaultValue={editor.state} onChange={e=>{const s=e.target.value;if(s==="scheduled"&&!schedule)setSchedule(datetimeLocal(new Date(Date.now()+86400000).toISOString()));}}><option value="pending">Pendiente / oculto</option><option value="published">Publicado / visible</option><option value="scheduled">Programado</option></select></label>
+      <div className="web-url-note"><strong>Enlace original permanente para Facebook e Instagram</strong><div className="copy-link-inline"><span>{editor.canonical_url}</span><button type="button" onClick={()=>void copyCanonical(editor)}><Link2 size={14}/> Copiar enlace</button></div></div>
+      {editor.kind==="mensaje"&&<div className="schedule-meta-card"><h3>Sincronizar con las redes sociales</h3><p>Introduce la fecha y hora ya confirmadas en Facebook e Instagram. El sistema activará esta publicación en la revista automáticamente cinco minutos antes. Horario: Colombia.</p><label>Fecha y hora de publicación en Meta<input type="datetime-local" value={metaSchedule} onChange={e=>setMetaSchedule(e.target.value)}/></label><button className="gold-button small" type="button" onClick={()=>void programFromMeta()} disabled={!metaSchedule||busy===editor.id}><CalendarClock size={16}/> Programar web 5 minutos antes</button></div>}
+      <div className="form-two"><label>Estado<select name="state" value={editState} onChange={e=>{const s=e.target.value as "pending"|"published"|"scheduled";setEditState(s);if(s==="scheduled"&&!schedule)setSchedule(datetimeLocal(new Date(Date.now()+86400000).toISOString()));}}><option value="pending">Pendiente / oculto</option><option value="published">Publicado / visible</option><option value="scheduled">Programado</option></select></label>
       <label>Fecha y hora (Colombia)<input name="scheduled_at" type="datetime-local" value={schedule} onChange={e=>setSchedule(e.target.value)}/></label></div>
       <div className="approval-note">{editor.approved_by_author?"✓ Texto aprobado por el autor; se conserva esta aprobación aunque esté pendiente.":<><p>Esta obra todavía no tiene aprobación autoral y no se puede publicar.</p><button type="button" className="muted-button" disabled={busy===editor.id||!editor.body||editor.body.trim().length<20} onClick={()=>void patch(editor,{confirmApproval:true},true)}>Confirmar aprobación del autor</button></>}</div>
       <label>Título<input name="title" required defaultValue={editor.title} maxLength={240}/></label>
@@ -145,7 +172,7 @@ export function Board({initial}:{initial:EditorialItem[]}){
       <div className="form-two"><label>Referencia bíblica<input name="bible_reference" defaultValue={editor.bible_reference||""}/></label><label>Imagen de portada<input name="cover_url" defaultValue={editor.cover_url||""} placeholder="https://..."/></label></div>
       <label>Nota para la bitácora<input name="change_note" maxLength={500} defaultValue="Actualización editorial desde el Centro"/></label>
       <label className="checkbox-line"><input type="checkbox" name="featured" defaultChecked={editor.featured}/>Destacar esta publicación</label>
-      <p className="form-hint">Programar una fecha publica automáticamente el contenido desde esa hora; no programa publicaciones en Facebook o Instagram.</p>
+      <p className="form-hint">La programación de la revista es automática. No modifica por sí sola una publicación ya programada en Facebook o Instagram; para actualizar su descripción utiliza «Enlaces para redes».</p>
       <div className="dialog-actions"><button type="button" className="muted-button" onClick={()=>setEditor(null)}>Cancelar</button><button className="gold-button" disabled={busy===editor.id} type="submit">{busy===editor.id?"Guardando…":"Guardar cambios"} <Check size={16}/></button></div>
      </form>}
    </div>

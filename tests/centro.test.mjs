@@ -79,3 +79,27 @@ test("Acceso privado adaptable a teléfonos, sin desbordamiento mínimo de CSS G
  assert.match(css,/\.login-left,\.login-right,\.login-message,\.login-box\{min-width:0\}/);
  assert.match(css,/font-size:clamp\(31px,9vw,38px\)/);
 });
+
+test("La sincronización Meta activa la revista exactamente cinco minutos antes",()=>{
+ const sql=read("database/007_meta_synchronization.sql");
+ const route=read("app/api/programar-meta/route.ts");
+ assert.match(sql,/p_meta_at-interval '5 minutes'/);
+ assert.match(sql,/private.editorial_is_director\(\)/);
+ assert.match(sql,/char_length\(pg_catalog.btrim\(r.body\)\)<20/);
+ assert.match(sql,/r.cover_url is null/);
+ assert.match(route,/await verifyEditor\(\)/);
+ assert.match(route,/editorial_schedule_from_meta/);
+});
+test("El centro presenta enlaces permanentes y descripciones de los originales",()=>{
+ const data=read("lib/data.ts");
+ const pack=read("components/MetaPack.tsx");
+ assert.match(data,/canonical_url:string/);
+ assert.match(pack,/navigator.clipboard.writeText/);
+ assert.match(pack,/LEE Y COMENTA LA REFLEXIÓN COMPLETA/);
+ assert.match(read("components/Shell.tsx"),/\/enlaces/);
+});
+test("Se previene publicación en Meta sin sincronización de la web",()=>{
+ const sql=read("database/007_meta_synchronization.sql");
+ assert.match(sql,/new.scheduled_at<>new.social_scheduled_at-interval '5 minutes'/);
+ assert.match(sql,/grant execute on function public.editorial_meta_export/);
+});

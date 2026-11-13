@@ -14,3 +14,4 @@ VERCEL/
 
 .vercel
 .env*
+/database/006_web_schedule_and_canonical.sql
