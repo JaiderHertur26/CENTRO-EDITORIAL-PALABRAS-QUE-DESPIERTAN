@@ -72,3 +72,10 @@ test("Las aprobaciones nuevas solo corresponden a la dirección y no pueden revo
  assert.match(api,/data.confirmApproval===true/);
  assert.match(api,/patch.approved_by_author=true/);
 });
+
+test("Acceso privado adaptable a teléfonos, sin desbordamiento mínimo de CSS Grid",()=>{
+ const css=read("app/globals.css");
+ assert.match(css,/grid-template-columns:minmax\(0,1fr\)/);
+ assert.match(css,/\.login-left,\.login-right,\.login-message,\.login-box\{min-width:0\}/);
+ assert.match(css,/font-size:clamp\(31px,9vw,38px\)/);
+});

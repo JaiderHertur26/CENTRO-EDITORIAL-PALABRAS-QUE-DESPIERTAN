@@ -13,3 +13,18 @@
 @media(max-width:620px){.workspace{padding:21px 4% 45px}.topbar{padding:0 4%}.user-chip>span:not(.user-avatar){display:none}.welcome{min-height:0}.welcome h1{font-size:34px}.welcome-art{display:none}.stats{grid-template-columns:repeat(2,minmax(0,1fr));gap:9px}.stat{padding:16px}.stat strong{font-size:33px}.stat>span{font-size:9px}.section-card-header{padding:20px}.section-card h2{font-size:23px}.live-indicator{display:none}.board-tabs,.community-tabs{padding:14px}.tab,.community-tabs button{padding:9px;font-size:12px}.board-overview{margin:13px;padding:14px;gap:13px}.board-overview>div{min-width:0}.toolbar{margin:15px 13px}.toolbar .gold-button{width:100%}.publication-list{padding:0 11px}.publication-row,.table-head{grid-template-columns:minmax(0,1fr) auto;gap:9px;padding:13px 7px}.publication-row>:nth-child(2),.table-head>:nth-child(2){display:none}.item-main{display:block}.item-main .item-code{display:inline-block;margin-bottom:8px}.item-main h3{font-size:14px}.item-actions{flex-wrap:wrap}.board-footnote{margin:11px 15px 25px}.bottom-grid{grid-template-columns:1fr}.dialog-header,.edit-form{padding:19px}.dialog-header h2{font-size:22px}.form-two{grid-template-columns:1fr}.comment-head time{width:100%;margin:0}.people-table{padding:0 11px 20px}.person-row,.people-table .table-head{grid-template-columns:1fr}.person-row>:nth-child(2),.person-row>:nth-child(3){margin-left:48px}.login-message h1{font-size:40px}.login-cover{opacity:.2}.page-heading h1{font-size:35px}}
 
 .season-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:15px}.season-card,.asset-card{background:var(--panel);border:1px solid var(--line);border-radius:11px;overflow:hidden}.season-header{display:flex;gap:18px;padding:24px;border-bottom:1px solid var(--line)}.season-big-number{font:48px Georgia,serif;color:var(--gold);min-width:65px}.season-header h2{font:normal 21px Georgia,serif;margin:8px 0}.season-header p{color:var(--muted);font-size:12px;margin:0}.series-grid{padding:15px 22px}.series-row{padding:13px 4px;border-bottom:1px solid #34281c;display:flex;flex-wrap:wrap;gap:8px;align-items:center}.series-row:last-child{border-bottom:0}.series-row strong{font:normal 14px Georgia,serif;color:var(--white);flex:1}.series-row small{width:100%;font-size:11px;color:var(--muted);padding-left:1px}.asset-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:17px}.asset-visual{height:310px;background:#110e0a;text-align:center;padding:15px}.asset-visual img{height:100%;width:auto;object-fit:contain}.asset-description{padding:25px}.asset-description h2{font:normal 24px Georgia,serif}.asset-description p:not(.kicker){font-size:13px;color:var(--muted)}.asset-description code{font:10px monospace;color:var(--gold);word-break:break-all}@media(max-width:800px){.season-grid,.asset-grid{grid-template-columns:1fr}}
+
+/* Responsive sign-in: prevent CSS-grid min-content overflow on narrow screens. */
+.login-left,.login-right,.login-message,.login-box{min-width:0}
+@media(max-width:900px){.login-root{grid-template-columns:minmax(0,1fr)}}
+@media(max-width:620px){
+ .login-root{width:100%;min-width:0}
+ .login-left,.login-right{min-width:0;padding-left:24px;padding-right:24px}
+ .login-message,.login-box{width:100%;min-width:0;max-width:100%}
+ .login-message h1{font-size:clamp(31px,9vw,38px);line-height:1.17;max-width:100%;overflow-wrap:normal}
+ .login-message>p:last-child{max-width:100%;overflow-wrap:break-word}
+ .login-brand{font-size:13px;overflow-wrap:anywhere}
+ .login-cover{display:none}
+ .login-form .input-icon input{min-width:0}
+ .login-box h2{font-size:36px}
+}
