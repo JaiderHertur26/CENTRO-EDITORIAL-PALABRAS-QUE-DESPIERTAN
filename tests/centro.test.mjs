@@ -56,3 +56,13 @@ test("La publicación debe reflejar el estado efectivo y la fecha",()=>{
  assert.match(site,/state==="scheduled"/);
  assert.match(board,/Date\.now\(\)/);
 });
+
+test("Las aprobaciones nuevas solo corresponden a la dirección y no pueden revocarse",()=>{
+ const sql=read("database/004_author_approval.sql");
+ const api=read("app/api/items/route.ts");
+ assert.match(sql,/pquedespiertan@gmail.com/);
+ assert.match(sql,/No se puede retirar una aprobacion de autor/);
+ assert.match(sql,/La aprobacion corresponde a la direccion autora/);
+ assert.match(api,/data.confirmApproval===true/);
+ assert.match(api,/patch.approved_by_author=true/);
+});

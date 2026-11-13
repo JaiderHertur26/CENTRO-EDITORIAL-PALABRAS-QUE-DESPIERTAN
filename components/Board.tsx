@@ -137,7 +137,7 @@ export function Board({initial}:{initial:EditorialItem[]}){
      </form>:editor&&<form id="edit-form" className="edit-form" onSubmit={e=>{e.preventDefault();void saveEditor();}}>
       <div className="form-two"><label>Estado<select name="state" defaultValue={editor.state} onChange={e=>{const s=e.target.value;if(s==="scheduled"&&!schedule)setSchedule(datetimeLocal(new Date(Date.now()+86400000).toISOString()));}}><option value="pending">Pendiente / oculto</option><option value="published">Publicado / visible</option><option value="scheduled">Programado</option></select></label>
       <label>Fecha y hora (Colombia)<input name="scheduled_at" type="datetime-local" value={schedule} onChange={e=>setSchedule(e.target.value)}/></label></div>
-      <div className="approval-note">{editor.approved_by_author?"✓ Texto aprobado por el autor; se conserva esta aprobación aunque esté pendiente.":"Esta obra no tiene aprobación autoral; no debe hacerse pública."}</div>
+      <div className="approval-note">{editor.approved_by_author?"✓ Texto aprobado por el autor; se conserva esta aprobación aunque esté pendiente.":<><p>Esta obra todavía no tiene aprobación autoral y no se puede publicar.</p><button type="button" className="muted-button" disabled={busy===editor.id||!editor.body||editor.body.trim().length<20} onClick={()=>void patch(editor,{confirmApproval:true},true)}>Confirmar aprobación del autor</button></>}</div>
       <label>Título<input name="title" required defaultValue={editor.title} maxLength={240}/></label>
       <label>Subtítulo<input name="subtitle" defaultValue={editor.subtitle||""}/></label>
       <label>Resumen / introducción<textarea name="summary" rows={4} defaultValue={editor.summary||""}/></label>

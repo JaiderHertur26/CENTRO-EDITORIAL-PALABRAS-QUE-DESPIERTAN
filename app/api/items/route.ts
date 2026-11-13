@@ -40,8 +40,14 @@ export async function PATCH(req:NextRequest){
  const current=original.data;
  if(data.updated_at!==current.updated_at)return err("Esta publicación cambió en otra sesión. Actualiza la ficha para evitar sobrescribirla.",409);
  const patch=pick(data);
+ const approving=data.confirmApproval===true&&current.approved_by_author===false;
+ if(approving){
+  if(String(patch.body??current.body??"").trim().length<20)return err("Completa el contenido antes de confirmar su aprobación.");
+  patch.approved_by_author=true;
+  patch.change_note="Aprobación autoral explícita desde la dirección editorial";
+ }
  const state=(patch.state??current.state) as string;
- if(!current.approved_by_author&&state!=="pending")return err("Esta obra necesita aprobación del autor antes de programarse o publicarse.");
+ if(!current.approved_by_author&&!approving&&state!=="pending")return err("Esta obra necesita aprobación del autor antes de programarse o publicarse.");
  if(patch.cover_url!==undefined&&patch.cover_url!==null&&(typeof patch.cover_url!=="string"||!/^https:\/\/[\w.-]+\//.test(patch.cover_url)&&!/^\/(identidad|mensajes)\//.test(patch.cover_url)))return err("La imagen debe ser una URL HTTPS o un recurso oficial.");
  const merged={...current,...patch};
  const problem=validateItem(patch,merged);

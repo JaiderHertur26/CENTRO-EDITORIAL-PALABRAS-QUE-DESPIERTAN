@@ -26,7 +26,7 @@ Aplicación administrativa privada e independiente, construida en Next.js 16 / R
 - `npm run prepare:seed` genera una semilla desde los originales y snapshots de la web en modo **lectura**; su resultado es privado y se excluye de Git.
 
 ## Base
-Migraciones en `database/001_editorial.sql`, `database/001b_audit_fix.sql` y `database/003_social_schedule.sql`. La primera semilla (12 artículos, 20 mensajes, 6 temas) ya está aplicada a Supabase, con **ART-001 visible y ART-002–012 pendientes**. El proceso es auditado y no cambia la aprobación del autor. La revista pública utiliza rutas dinámicas protegidas por la misma fuente de visibilidad.
+Migraciones en `database/001_editorial.sql`, `database/001b_audit_fix.sql` , `database/003_social_schedule.sql` y `database/004_author_approval.sql` (aprobación posterior solo por la dirección). La primera semilla (12 artículos, 20 mensajes, 6 temas) ya está aplicada a Supabase, con **ART-001 visible y ART-002–012 pendientes**. El proceso es auditado y no cambia la aprobación del autor. La revista pública utiliza rutas dinámicas protegidas por la misma fuente de visibilidad.
 
 ## Repositorio y despliegue
 - GitHub: https://github.com/JaiderHertur26/CENTRO-EDITORIAL-PALABRAS-QUE-DESPIERTAN
