@@ -1,4 +1,6 @@
 -- Agenda artículos semanales. Horario Colombia (UTC-05), martes 18:55.
+-- EJECUTADA DE FORMA EQUIVALENTE por Supabase Data API el 13/11/2026.
+-- 11 artículos verificados como scheduled; NO volver a ejecutar este SQL.
 -- ART-001 ya publicado; no modificar ni ocultar.
 BEGIN;
 DO $$
