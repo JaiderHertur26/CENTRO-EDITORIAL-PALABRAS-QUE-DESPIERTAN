@@ -1,0 +1,17 @@
+# Solo se envía al entorno de Vercel el código necesario para ejecutar la aplicación.
+# Nunca enviar credenciales, perfiles de navegador o actas de trabajo.
+GITHUB/
+VERCEL/
+.git/
+.github/
+.env*
+.vercel/
+.next/
+node_modules/
+*.tsbuildinfo
+00_DOCUMENTO_MAESTRO_*
+01_INSTRUCCION_*
+database/
+scripts/
+tests/
+README.md
