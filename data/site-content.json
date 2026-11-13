@@ -1,0 +1,298 @@
+{
+  "version": 2,
+  "fuente": "PLAN MAESTRO - 12 TEMPORADAS.md + CATALOGO_GENERAL_MENSAJES.csv + lista blanca web",
+  "temporadas": [
+    {
+      "id": "T01",
+      "numero": 1,
+      "titulo": "EL MISTERIO DE NUESTRO ORIGEN",
+      "series": [
+        {
+          "id": "T01-S01",
+          "titulo": "Creados por amor",
+          "publicaciones": 0
+        },
+        {
+          "id": "T01-S02",
+          "titulo": "Imagen y semejanza",
+          "publicaciones": 0
+        },
+        {
+          "id": "T01-S03",
+          "titulo": "Creados por Cristo y para Cristo",
+          "publicaciones": 0
+        }
+      ],
+      "publicaciones": 0
+    },
+    {
+      "id": "T02",
+      "numero": 2,
+      "titulo": "LA HERIDA Y LA PROMESA",
+      "series": [
+        {
+          "id": "T02-S01",
+          "titulo": "La libertad y la caída",
+          "publicaciones": 0
+        },
+        {
+          "id": "T02-S02",
+          "titulo": "La imagen que no se borró",
+          "publicaciones": 0
+        },
+        {
+          "id": "T02-S03",
+          "titulo": "La promesa de restauración",
+          "publicaciones": 0
+        }
+      ],
+      "publicaciones": 0
+    },
+    {
+      "id": "T03",
+      "numero": 3,
+      "titulo": "EL ÁRBOL QUE VOLVIÓ A DAR VIDA",
+      "series": [
+        {
+          "id": "T03-S01",
+          "titulo": "Los árboles de la Escritura",
+          "publicaciones": 0
+        },
+        {
+          "id": "T03-S02",
+          "titulo": "El madero de la cruz",
+          "publicaciones": 0
+        },
+        {
+          "id": "T03-S03",
+          "titulo": "Raíces, agua, hojas y frutos",
+          "publicaciones": 0
+        }
+      ],
+      "publicaciones": 0
+    },
+    {
+      "id": "T04",
+      "numero": 4,
+      "titulo": "EL AMOR QUE NOS RESCATÓ",
+      "series": [
+        {
+          "id": "T04-S01",
+          "titulo": "Dios entra en nuestra historia",
+          "publicaciones": 0
+        },
+        {
+          "id": "T04-S02",
+          "titulo": "El amor manifestado en la cruz",
+          "publicaciones": 0
+        },
+        {
+          "id": "T04-S03",
+          "titulo": "La victoria de la resurrección",
+          "publicaciones": 0
+        }
+      ],
+      "publicaciones": 0
+    },
+    {
+      "id": "T05",
+      "numero": 5,
+      "titulo": "DENTRO DEL AMOR DE DIOS",
+      "series": [
+        {
+          "id": "T05-S01",
+          "titulo": "El Padre que nos llama",
+          "publicaciones": 0
+        },
+        {
+          "id": "T05-S02",
+          "titulo": "Hijos en el Hijo",
+          "publicaciones": 0
+        },
+        {
+          "id": "T05-S03",
+          "titulo": "El Espíritu que nos transforma",
+          "publicaciones": 0
+        }
+      ],
+      "publicaciones": 0
+    },
+    {
+      "id": "T06",
+      "numero": 6,
+      "titulo": "UN SOLO CUERPO, UNA SOLA VIDA",
+      "series": [
+        {
+          "id": "T06-S01",
+          "titulo": "El Cuerpo de Cristo",
+          "publicaciones": 0
+        },
+        {
+          "id": "T06-S02",
+          "titulo": "La vida sacramental",
+          "publicaciones": 0
+        },
+        {
+          "id": "T06-S03",
+          "titulo": "Comunión, misión y santidad",
+          "publicaciones": 0
+        }
+      ],
+      "publicaciones": 0
+    },
+    {
+      "id": "T07",
+      "numero": 7,
+      "titulo": "APRENDER A CONFIAR",
+      "series": [
+        {
+          "id": "T07-S01",
+          "titulo": "La oración que abre el corazón",
+          "publicaciones": 1
+        },
+        {
+          "id": "T07-S02",
+          "titulo": "La confianza verdadera",
+          "publicaciones": 0
+        },
+        {
+          "id": "T07-S03",
+          "titulo": "Permanecer en la prueba",
+          "publicaciones": 0
+        }
+      ],
+      "publicaciones": 1
+    },
+    {
+      "id": "T08",
+      "numero": 8,
+      "titulo": "EL CORAZÓN HUMANO ANTE DIOS",
+      "series": [
+        {
+          "id": "T08-S01",
+          "titulo": "Conocerse delante de Dios",
+          "publicaciones": 0
+        },
+        {
+          "id": "T08-S02",
+          "titulo": "Las heridas del corazón",
+          "publicaciones": 0
+        },
+        {
+          "id": "T08-S03",
+          "titulo": "La libertad que aprende a amar",
+          "publicaciones": 0
+        }
+      ],
+      "publicaciones": 0
+    },
+    {
+      "id": "T09",
+      "numero": 9,
+      "titulo": "EL AMOR QUE SE HACE VIDA",
+      "series": [
+        {
+          "id": "T09-S01",
+          "titulo": "Amar como Cristo",
+          "publicaciones": 0
+        },
+        {
+          "id": "T09-S02",
+          "titulo": "Perdonar y reconciliar",
+          "publicaciones": 0
+        },
+        {
+          "id": "T09-S03",
+          "titulo": "La fe en la vida cotidiana",
+          "publicaciones": 0
+        }
+      ],
+      "publicaciones": 0
+    },
+    {
+      "id": "T10",
+      "numero": 10,
+      "titulo": "CUANDO LA VIDA DUELE",
+      "series": [
+        {
+          "id": "T10-S01",
+          "titulo": "Las preguntas del dolor",
+          "publicaciones": 0
+        },
+        {
+          "id": "T10-S02",
+          "titulo": "La esperanza en la prueba",
+          "publicaciones": 0
+        },
+        {
+          "id": "T10-S03",
+          "titulo": "La compasión que acompaña",
+          "publicaciones": 0
+        }
+      ],
+      "publicaciones": 0
+    },
+    {
+      "id": "T11",
+      "numero": 11,
+      "titulo": "LA SABIDURÍA DE LO COTIDIANO",
+      "series": [
+        {
+          "id": "T11-S01",
+          "titulo": "Las parábolas de la vida",
+          "publicaciones": 0
+        },
+        {
+          "id": "T11-S02",
+          "titulo": "Discernir lo importante",
+          "publicaciones": 0
+        },
+        {
+          "id": "T11-S03",
+          "titulo": "Vivir con sabiduría",
+          "publicaciones": 0
+        }
+      ],
+      "publicaciones": 0
+    },
+    {
+      "id": "T12",
+      "numero": 12,
+      "titulo": "LA VIDA QUE NO TERMINA",
+      "series": [
+        {
+          "id": "T12-S01",
+          "titulo": "La muerte y la esperanza",
+          "publicaciones": 0
+        },
+        {
+          "id": "T12-S02",
+          "titulo": "La nueva creación",
+          "publicaciones": 0
+        },
+        {
+          "id": "T12-S03",
+          "titulo": "El encuentro definitivo con Dios",
+          "publicaciones": 0
+        }
+      ],
+      "publicaciones": 0
+    }
+  ],
+  "mensajes": [
+    {
+      "id": "PD-001",
+      "slug": "pd-001-dios-ya-lo-sabe",
+      "titulo": "Dios ya lo sabe",
+      "texto": "Dios no necesita que le cuentes tu vida para conocerla. Eres tú quien necesita contársela para aprender a confiar en Él. La oración no abre los oídos de Dios; abre nuestro corazón a su amor",
+      "referencia": "Mateo 6,8",
+      "temporada": "T07",
+      "serie": "T07-S01",
+      "fecha": "2026-11-12",
+      "autor": "P. Jaider Herrera Turizo",
+      "imagen": "/mensajes/pd-001.png",
+      "instagram": "https://www.instagram.com/p/Dfp3C-Zg24MAWTvmnHdT6Au5jgmEi91B1xrifg0/"
+    }
+  ],
+  "articulos": []
+}
