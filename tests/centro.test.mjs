@@ -112,3 +112,22 @@ test("Los mensajes previstos en web, aún no programados en Meta, tienen calenda
  assert.match(calendar,/todavía no programado en Meta/);
  assert.match(pack,/aún sin programar en redes/);
 });
+
+test("Agenda semanal de artículos: once martes a las 18:55 Colombia, preservando ART-001",()=>{
+ const sql=read("database/008_articles_tuesday_schedule.sql");
+ const matches=[...sql.matchAll(/\('ART-(\d{3})','([^']+)'::timestamptz\)/g)];
+ assert.equal(matches.length,11);
+ const dates=matches.map((m,i)=>{
+  assert.equal(Number(m[1]),i+2);
+  const date=new Date(m[2]);
+  assert.equal(date.getUTCDay(),2);
+  assert.equal(date.getUTCHours(),23);
+  assert.equal(date.getUTCMinutes(),55);
+  return date.getTime();
+ });
+ assert.equal(new Date(dates[0]).toISOString().slice(0,10),"2026-11-17");
+ assert.equal(new Date(dates.at(-1)).toISOString().slice(0,10),"2027-01-26");
+ assert.ok(dates.every((t,i)=>i===0||t-dates[i-1]===7*86400000));
+ assert.match(sql,/code='ART-001' AND state='published'/);
+ assert.match(sql,/approved_by_author = true AND state = 'pending'/);
+});
