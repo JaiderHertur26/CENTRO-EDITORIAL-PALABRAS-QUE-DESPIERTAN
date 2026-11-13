@@ -1,6 +1,6 @@
 import Link from "next/link";
 import Image from "next/image";
-import {LayoutDashboard,BookOpen,MessageSquareQuote,CalendarDays,Users,History,Link2,ExternalLink,ShieldCheck,Library,Settings,SunMoon} from "lucide-react";
+import {LayoutDashboard,BookOpen,MessageSquareQuote,CalendarDays,Users,History,Link2,ExternalLink,ShieldCheck,Library,Settings,SunMoon,BarChart3} from "lucide-react";
 const links=[
  {href:"/",label:"Centro de mando",Icon:LayoutDashboard},
  {href:"/#publicaciones",label:"Publicaciones",Icon:Library},
@@ -8,6 +8,7 @@ const links=[
  {href:"/biblioteca",label:"Biblioteca gráfica",Icon:SunMoon},
  {href:"/comunidad",label:"Comunidad",Icon:Users},
  {href:"/calendario",label:"Calendario",Icon:CalendarDays},
+ {href:"/estadisticas",label:"Estadísticas",Icon:BarChart3},
  {href:"/enlaces",label:"Enlaces para redes",Icon:Link2},
  {href:"/auditoria",label:"Auditoría",Icon:History}
 ];

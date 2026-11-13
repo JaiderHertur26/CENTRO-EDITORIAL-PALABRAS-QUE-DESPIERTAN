@@ -2,10 +2,12 @@ import {Shell} from "@/components/Shell";
 import {Board} from "@/components/Board";
 import {requireEditor} from "@/lib/access";
 import {itemsList,communityStats,visibleNow} from "@/lib/data";
+import {readVisitStats} from "@/lib/visits";
+import Link from "next/link";
 export const dynamic="force-dynamic";
 export default async function Home(){
  const user=await requireEditor();
- const [items,community]=await Promise.all([itemsList(),communityStats()]);
+ const [items,community,traffic]=await Promise.all([itemsList(),communityStats(),readVisitStats(30).catch(()=>null)]);
  const published=items.filter(visibleNow);
  const pending=items.filter(x=>x.state==="pending");
  const upcoming=items.filter(x=>x.state==="scheduled"&&!visibleNow(x)).length;
@@ -19,6 +21,7 @@ export default async function Home(){
     <div className="welcome-art"><img src="/portada-oficial.png" alt="Identidad editorial con brote iluminado"/></div>
   </section>
   <section className="stats" aria-label="Estado del proyecto">
+   <Link className="stat traffic-stat-link" href="/estadisticas"><span>PÁGINAS VISTAS · 30 DÍAS</span><strong>{traffic?new Intl.NumberFormat("es-CO").format(traffic.views):"—"}</strong><small>Ver visitas por contenido y día →</small></Link>
    <div className="stat"><span>VISIBLES EN LA WEB</span><strong>{published.length}</strong><small>Contenidos abiertos al lector</small></div>
    <div className="stat"><span>EN PENDIENTES</span><strong>{pending.length}</strong><small>Listos para gestionar</small></div>
    <div className="stat"><span>PROGRAMADOS</span><strong>{upcoming}</strong><small>Se harán visibles en su fecha</small></div>

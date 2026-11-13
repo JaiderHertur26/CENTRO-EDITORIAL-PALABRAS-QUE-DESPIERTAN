@@ -131,3 +131,19 @@ test("Agenda semanal de artículos: once martes a las 18:55 Colombia, preservand
  assert.match(sql,/code='ART-001' AND state='published'/);
  assert.match(sql,/approved_by_author = true AND state = 'pending'/);
 });
+
+test("El Centro muestra vistas de la revista en un panel solo para dirección",()=>{
+ const page=read("app/estadisticas/page.tsx");
+ const helper=read("lib/visits.ts");
+ const home=read("app/page.tsx");
+ assert.match(read("components/Shell.tsx"),/\/estadisticas/);
+ assert.match(page,/await requireEditor\(\)/);
+ assert.match(page,/readVisitStats\(days\)/);
+ assert.match(page,/Artículos/);
+ assert.match(page,/Mensajes/);
+ assert.match(page,/Testimonios/);
+ assert.match(helper,/session\.access_token/);
+ assert.match(helper,/cache:"no-store"/);
+ assert.match(home,/readVisitStats\(30\)/);
+ assert.match(home,/PÁGINAS VISTAS/);
+});
