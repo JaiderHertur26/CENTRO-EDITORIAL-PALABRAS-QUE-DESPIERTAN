@@ -1,5 +1,5 @@
 import {NextRequest,NextResponse} from "next/server";
-import {verifyEditor,editorialAdmin} from "@/lib/supabase";
+import {verifyEditor,sessionClient} from "@/lib/supabase";
 import {kindOk,slugOk,stateOk,validateItem} from "@/lib/validation";
 export const dynamic="force-dynamic";
 const noStore={"Cache-Control":"private,no-store"};
@@ -18,8 +18,9 @@ export async function GET(req:NextRequest){
  if(!user)return err("Acceso editorial restringido.",403);
  const id=req.nextUrl.searchParams.get("id");
  if(!id||!UUID.test(id))return err("Identificador no válido");
- const admin=editorialAdmin();
- const {data,error}=await admin.from("editorial_items").select("*").eq("id",id).maybeSingle();
+ const client=await sessionClient();
+ if(!client)return err("Sesión no disponible",403);
+ const {data,error}=await client.rpc("editorial_read",{p_resource:"item",p_id:id});
  if(error||!data)return err("Publicación no encontrada",404);
  return NextResponse.json({item:data},{headers:noStore});
 }
@@ -34,8 +35,9 @@ export async function PATCH(req:NextRequest){
  try{data=JSON.parse(raw);}catch{return err("JSON incorrecto");}
  const id=data.id;
  if(typeof id!=="string"||!UUID.test(id))return err("Publicación no válida");
- const admin=editorialAdmin();
- const original=await admin.from("editorial_items").select("*").eq("id",id).maybeSingle();
+ const client=await sessionClient();
+ if(!client)return err("Sesión no disponible",403);
+ const original=await client.rpc("editorial_read",{p_resource:"item",p_id:id});
  if(original.error||!original.data)return err("Publicación no encontrada",404);
  const current=original.data;
  if(data.updated_at!==current.updated_at)return err("Esta publicación cambió en otra sesión. Actualiza la ficha para evitar sobrescribirla.",409);
@@ -55,8 +57,9 @@ export async function PATCH(req:NextRequest){
  if(state==="published"&&!current.published_at)patch.published_at=new Date().toISOString();
  if(state!=="scheduled")patch.scheduled_at=null;
  patch.updated_by=user.id;
- const {data:saved,error}=await admin.from("editorial_items").update(patch)
-  .eq("id",id).eq("updated_at",current.updated_at).select("id,state,updated_at").maybeSingle();
+ const {data:saved,error}=await client.rpc("editorial_update",{
+  p_id:id,p_expected_updated_at:current.updated_at,p_patch:patch
+ });
  if(error)return err("La base rechazó la modificación: "+(error.code||"verificar"),422);
  if(!saved)return err("La publicación cambió. Recarga su ficha.",409);
  return NextResponse.json({ok:true,item:saved},{headers:noStore});
@@ -81,8 +84,9 @@ export async function POST(req:NextRequest){
   state:"pending",updated_by:user.id,
   change_note:"Alta desde el Centro Editorial (pendiente hasta publicación explícita)"
  };
- const admin=editorialAdmin();
- const {data:item,error}=await admin.from("editorial_items").insert(record).select("id,slug").single();
+ const client=await sessionClient();
+ if(!client)return err("Sesión no disponible",403);
+ const {data:item,error}=await client.rpc("editorial_create",{p_content:record});
  if(error)return err(error.code==="23505"?"Ya existe un elemento con ese código o identificador.":"No se pudo crear la publicación: "+error.code,409);
  return NextResponse.json({ok:true,item},{status:201,headers:noStore});
 }

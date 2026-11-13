@@ -21,7 +21,7 @@ test("El plan tiene las 12 temporadas y las 36 series históricas",()=>{
 test("Solo el correo de dirección autorizado puede operar el Centro",()=>{
  const auth=read("lib/supabase.ts");
  assert.match(auth,/pquedespiertan@gmail.com/);
- assert.match(auth,/discussion_moderators/);
+ assert.match(auth,/editorial_is_authorized/);
  assert.match(auth,/auth.getUser\(\)/);
  assert.match(auth,/email_confirmed_at/);
 });
@@ -33,6 +33,8 @@ test("Ningún dato privado llega al navegador sin autorización",()=>{
  assert.match(api,/originSafe\(req\)/);
  assert.match(community,/origin!==req.nextUrl.origin/);
  assert.match(api,/updated_at!==current.updated_at/);
+ assert.match(api,/client.rpc\("editorial_update"/);
+ assert.match(community,/client.rpc\("editorial_moderate"/);
 });
 test("La aprobación por el autor no desaparece al ocultar",()=>{
  const sql=read("database/001_editorial.sql");
@@ -47,6 +49,10 @@ test("El centro no contiene claves ni originales de otra carpeta",()=>{
  assert.match(ignore,/\/data\/catalog.json/);
  assert.match(ignore,/\/database\/002_seed.sql/);
  assert.ok(!read("app/page.tsx").includes("SUPABASE_SECRET_KEY"));
+ assert.ok(!read("lib/supabase.ts").includes("SUPABASE_SECRET_KEY"));
+ assert.match(read("database/005_editorial_session_rpc.sql"),/security definer/);
+ assert.match(read("database/005_editorial_session_rpc.sql"),/private.editorial_is_director/);
+ assert.match(read("database/005_editorial_session_rpc.sql"),/grant execute on function public.editorial_read/);
 });
 test("La publicación debe reflejar el estado efectivo y la fecha",()=>{
  const board=read("components/Board.tsx");

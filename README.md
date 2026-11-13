@@ -20,13 +20,13 @@ Aplicación administrativa privada e independiente, construida en Next.js 16 / R
 ## Configuración
 - `NEXT_PUBLIC_SUPABASE_URL` = URL del proyecto autorizado.
 - `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` = clave pública para Supabase Auth.
-- `SUPABASE_SECRET_KEY` = clave privada de servidor (nunca incluir el prefijo `NEXT_PUBLIC_`).
+- No se utiliza ni se almacena `SUPABASE_SECRET_KEY` en este proyecto. Las operaciones editoriales se ejecutan con la sesión verificada y funciones SQL de acceso restringido en Supabase.
 - Las variables privadas deben permanecer solo en `.env.local` y en el entorno seguro de Vercel.
 - `npm ci && npm test && npm run build`; `npm run dev` para desarrollo.
 - `npm run prepare:seed` genera una semilla desde los originales y snapshots de la web en modo **lectura**; su resultado es privado y se excluye de Git.
 
 ## Base
-Migraciones en `database/001_editorial.sql`, `database/001b_audit_fix.sql` , `database/003_social_schedule.sql` y `database/004_author_approval.sql` (aprobación posterior solo por la dirección). La primera semilla (12 artículos, 20 mensajes, 6 temas) ya está aplicada a Supabase, con **ART-001 visible y ART-002–012 pendientes**. El proceso es auditado y no cambia la aprobación del autor. La revista pública utiliza rutas dinámicas protegidas por la misma fuente de visibilidad.
+Migraciones en `database/001_editorial.sql`, `database/001b_audit_fix.sql`, `database/003_social_schedule.sql`, `database/004_author_approval.sql` y `database/005_editorial_session_rpc.sql` (acceso exclusivamente con JWT validado por Supabase; sin llave de administrador en Vercel). La primera semilla (12 artículos, 20 mensajes, 6 temas) ya está aplicada a Supabase, con **ART-001 visible y ART-002–012 pendientes**. El proceso es auditado y no cambia la aprobación del autor. La revista pública utiliza rutas dinámicas protegidas por la misma fuente de visibilidad.
 
 ## Repositorio y despliegue
 - GitHub: https://github.com/JaiderHertur26/CENTRO-EDITORIAL-PALABRAS-QUE-DESPIERTAN

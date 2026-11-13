@@ -1,5 +1,5 @@
 import "server-only";
-import {editorialAdmin} from "./supabase";
+import {sessionClient} from "./supabase";
 export type EditorialItem={
  id:string;kind:"articulo"|"mensaje"|"tema";code:string;slug:string;title:string;subtitle:string;
  summary:string;body?:string;state:"pending"|"scheduled"|"published";scheduled_at:string|null;
@@ -7,44 +7,33 @@ export type EditorialItem={
  series:string|null;social_scheduled_at:string|null;cover_url:string|null;featured:boolean;position:number;updated_at:string;
  bible_reference:string;source_url:string|null;
 };
+async function editorialRead(resource:"items"|"community"|"counts"|"audit",id?:string){
+ const client=await sessionClient();
+ if(!client)throw Error("Inicia sesión para consultar la dirección editorial");
+ const {data,error}=await client.rpc("editorial_read",{p_resource:resource,p_id:id||null});
+ if(error)throw Error("No se pudo consultar el Centro Editorial: "+(error.code||"acceso"));
+ return data;
+}
 export async function itemsList():Promise<EditorialItem[]>{
- const client=editorialAdmin();
- const {data,error}=await client.from("editorial_items").select(
-  "id,kind,code,slug,title,subtitle,summary,state,scheduled_at,published_at,approved_by_author,social_state,season,series,social_scheduled_at,cover_url,featured,position,updated_at,bible_reference,source_url"
- ).order("kind",{ascending:true}).order("position",{ascending:true});
- if(error)throw Error("No fue posible cargar el catálogo editorial: "+error.code);
- return data as EditorialItem[];
+ return await editorialRead("items") as EditorialItem[];
 }
 export async function communityData(){
- const admin=editorialAdmin();
- const [comments,reports,audit,users]=await Promise.all([
-  admin.from("discussion_entries").select("id,subject_type,subject_id,parent_id,display_name,body,created_at,status,author_id,reviewed_at").order("created_at",{ascending:false}).limit(100),
-  admin.from("discussion_reports").select("id,entry_id,reporter_id,motive,details,created_at,resolved").order("created_at",{ascending:false}).limit(100),
-  admin.from("editorial_audit").select("id,item_id,actor_id,action,old_state,new_state,change_note,changed_at").order("changed_at",{ascending:false}).limit(100),
-  admin.auth.admin.listUsers({page:1,perPage:200})
- ]);
- if(comments.error||reports.error||audit.error||users.error)throw Error("No se pudieron consultar los datos de la comunidad");
- const people=(users.data.users??[]).map(u=>({id:u.id,email:u.email??"",verified:!!u.email_confirmed_at,joined:u.created_at,lastLogin:u.last_sign_in_at??null}));
- return {comments:comments.data??[],reports:reports.data??[],audit:audit.data??[],people};
+ return await editorialRead("community") as {
+  comments:Array<{id:string;subject_type:string;subject_id:string;parent_id:string|null;display_name:string;body:string;created_at:string;status:string;author_id:string;reviewed_at:string|null}>;
+  reports:Array<{id:string;entry_id:string;reporter_id:string;motive:string;details:string|null;created_at:string;resolved:boolean}>;
+  audit:Array<{id:number;item_id:string;actor_id:string|null;action:string;old_state:string|null;new_state:string|null;change_note:string|null;changed_at:string}>;
+  people:Array<{id:string;email:string;verified:boolean;joined:string;lastLogin:string|null}>;
+ };
 }
 export function visibleNow(item:EditorialItem){
  return item.state==="published"||(item.state==="scheduled"&&!!item.scheduled_at&&new Date(item.scheduled_at).getTime()<=Date.now());
 }
-
 export async function communityStats(){
- const admin=editorialAdmin();
- const [comments,reports]=await Promise.all([
-  admin.from("discussion_entries").select("id",{head:true,count:"exact"}),
-  admin.from("discussion_reports").select("id",{head:true,count:"exact"}).eq("resolved",false)
- ]);
- if(comments.error||reports.error)throw Error("No se pudieron cargar las métricas de comunidad");
- return {commentCount:comments.count??0,reportCount:reports.count??0};
+ return await editorialRead("counts") as {commentCount:number;reportCount:number};
 }
 export async function auditHistory(){
- const admin=editorialAdmin();
- const {data,error}=await admin.from("editorial_audit")
-  .select("id,item_id,actor_id,action,old_state,new_state,change_note,changed_at")
-  .order("changed_at",{ascending:false}).limit(100);
- if(error)throw Error("No fue posible consultar la auditoría editorial");
- return data??[];
+ return await editorialRead("audit") as Array<{
+  id:number;item_id:string;actor_id:string|null;action:string;old_state:string|null;new_state:string|null;
+  change_note:string|null;changed_at:string;
+ }>;
 }
