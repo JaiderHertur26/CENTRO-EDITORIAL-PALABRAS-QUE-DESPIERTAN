@@ -30,3 +30,21 @@ export async function communityData(){
 export function visibleNow(item:EditorialItem){
  return item.state==="published"||(item.state==="scheduled"&&!!item.scheduled_at&&new Date(item.scheduled_at).getTime()<=Date.now());
 }
+
+export async function communityStats(){
+ const admin=editorialAdmin();
+ const [comments,reports]=await Promise.all([
+  admin.from("discussion_entries").select("id",{head:true,count:"exact"}),
+  admin.from("discussion_reports").select("id",{head:true,count:"exact"}).eq("resolved",false)
+ ]);
+ if(comments.error||reports.error)throw Error("No se pudieron cargar las métricas de comunidad");
+ return {commentCount:comments.count??0,reportCount:reports.count??0};
+}
+export async function auditHistory(){
+ const admin=editorialAdmin();
+ const {data,error}=await admin.from("editorial_audit")
+  .select("id,item_id,actor_id,action,old_state,new_state,change_note,changed_at")
+  .order("changed_at",{ascending:false}).limit(100);
+ if(error)throw Error("No fue posible consultar la auditoría editorial");
+ return data??[];
+}

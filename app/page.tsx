@@ -1,15 +1,15 @@
 import {Shell} from "@/components/Shell";
 import {Board} from "@/components/Board";
 import {requireEditor} from "@/lib/access";
-import {itemsList,communityData,visibleNow} from "@/lib/data";
+import {itemsList,communityStats,visibleNow} from "@/lib/data";
 export const dynamic="force-dynamic";
 export default async function Home(){
  const user=await requireEditor();
- const [items,community]=await Promise.all([itemsList(),communityData()]);
+ const [items,community]=await Promise.all([itemsList(),communityStats()]);
  const published=items.filter(visibleNow);
  const pending=items.filter(x=>x.state==="pending");
  const upcoming=items.filter(x=>x.state==="scheduled"&&!visibleNow(x)).length;
- const reports=community.reports.filter(x=>!x.resolved);
+ const reports=community.reportCount;
  const articles=items.filter(x=>x.kind==="articulo");
  return <Shell email={user.email||"Dirección"} section="Centro de mando">
   <div className="eyebrow-strip"><span className="tiny-diamond">◆</span> GESTIÓN PRIVADA DE LA REVISTA <span className="eyebrow-date">13 · NOV · 2026</span></div>
@@ -22,8 +22,8 @@ export default async function Home(){
    <div className="stat"><span>VISIBLES EN LA WEB</span><strong>{published.length}</strong><small>Contenidos abiertos al lector</small></div>
    <div className="stat"><span>EN PENDIENTES</span><strong>{pending.length}</strong><small>Listos para gestionar</small></div>
    <div className="stat"><span>PROGRAMADOS</span><strong>{upcoming}</strong><small>Se harán visibles en su fecha</small></div>
-   <div className="stat"><span>PARTICIPACIONES</span><strong>{community.comments.length}</strong><small>Últimas conversaciones registradas</small></div>
-   <div className="stat"><span>REPORTES ABIERTOS</span><strong>{reports.length}</strong><small>Requieren atención</small></div>
+   <div className="stat"><span>PARTICIPACIONES</span><strong>{community.commentCount}</strong><small>Últimas conversaciones registradas</small></div>
+   <div className="stat"><span>REPORTES ABIERTOS</span><strong>{reports}</strong><small>Requieren atención</small></div>
   </section>
   <section className="section-card" id="publicaciones"><div className="section-card-header"><div><p className="kicker">CONTROL DE VISIBILIDAD</p><h2>Publicaciones de la revista</h2><p>Los artículos aprobados pueden permanecer pendientes: tú decides cuándo pasan a la vista pública.</p></div><div className="live-indicator"><span/> CONECTADO A SUPABASE</div></div>
    <Board initial={items}/>
