@@ -103,3 +103,12 @@ test("Se previene publicación en Meta sin sincronización de la web",()=>{
  assert.match(sql,/new.scheduled_at<>new.social_scheduled_at-interval '5 minutes'/);
  assert.match(sql,/grant execute on function public.editorial_meta_export/);
 });
+
+test("Los mensajes previstos en web, aún no programados en Meta, tienen calendario visible en el Centro",()=>{
+ const calendar=read("app/calendario/page.tsx");
+ const pack=read("components/MetaPack.tsx");
+ assert.match(calendar,/const awaitingMeta=/);
+ assert.match(calendar,/getTime\(\)\+300000/);
+ assert.match(calendar,/todavía no programado en Meta/);
+ assert.match(pack,/aún sin programar en redes/);
+});

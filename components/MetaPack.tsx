@@ -31,9 +31,9 @@ export function MetaPack({items}:{items:MetaPublication[]}){
   </div>
   <div className="meta-list">
    {rows.map(item=><article className="meta-item" key={item.code}>
-    <div className="meta-item-top"><span className="item-code">{item.code}</span><span className={"state "+(item.state==="published"?"visible":item.state)}>{item.state==="published"?"Publicado":item.state==="scheduled"?"Programado":"Pendiente"}</span></div>
+    <div className="meta-item-top"><span className="item-code">{item.code}</span><span className={"state "+(item.state==="published"?"visible":item.state)}>{item.state==="published"?"Publicado en web":item.state==="scheduled"?"Web programada":"Pendiente"}</span></div>
     <h3>{item.title}</h3>
-    <p className="meta-date"><CalendarClock size={15}/>Web: {hour(item.scheduled_at)} · Meta: {hour(item.social_scheduled_at)}</p>
+    <p className="meta-date"><CalendarClock size={15}/>Web: {hour(item.scheduled_at)} · Meta: {item.social_scheduled_at?hour(item.social_scheduled_at):item.scheduled_at?`objetivo ${hour(new Date(new Date(item.scheduled_at).getTime()+300000).toISOString())} (aún sin programar en redes)`:"Pendiente de programación"}</p>
     <p className="meta-url">{item.canonical_url}</p>
     <div className="meta-copy-actions">
      <button className="muted-button" onClick={()=>void copy(item.code+"url",item.canonical_url)}><Copy size={15}/> Copiar enlace</button>
