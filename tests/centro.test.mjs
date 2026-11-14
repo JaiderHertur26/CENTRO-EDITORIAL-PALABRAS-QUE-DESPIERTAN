@@ -243,13 +243,16 @@ test("Facebook tiene verificación propia y no se confunde con los cinco permiso
  assert.match(api,/facebookCanCreateContent:status\.facebookCanCreateContent===true/);
 });
 
-test("La doble verificación Meta no presenta Facebook como pendiente cuando la página está confirmada",()=>{
+test("Integraciones refleja los recibos reales de TEST-001 sin confundir feed, historias y programación",()=>{
  const panel=read("app/integraciones/page.tsx");
- assert.match(panel,/facebookCanPost\?"Facebook también está identificado y autorizado para crear contenido/);
- assert.match(panel,/Preparada · aprobación de prueba pendiente/);
- assert.match(panel,/No se ha enviado ninguna publicación/);
+ assert.match(panel,/testReceipts=await metaPublishBridge\("GET"/);
+ assert.match(panel,/facebookTestPublished=testReceipts\?\.deliveries\?\.facebook_feed\?\.status==="published"/);
+ assert.match(panel,/instagramTestPublished=testReceipts\?\.deliveries\?\.instagram_feed\?\.status==="published"/);
+ assert.match(panel,/bothFeedsPublished=facebookTestPublished&&instagramTestPublished/);
+ assert.match(panel,/facebookCanPost\?bothFeedsPublished\?/);
+ assert.match(panel,/Ambos feeds publicados · historias pendientes/);
+ assert.match(panel,/Publicación automática inactiva/);
  assert.doesNotMatch(panel,/El siguiente paso será integrar Facebook/);
- assert.match(panel,/el envío desde el Centro Editorial continúa desactivado/);
 });
 
 test("Simulacion de Meta solo consulta estados y nunca envia contenido",()=>{
