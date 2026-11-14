@@ -7,7 +7,7 @@ const metaBase="https://graph.facebook.com/v26.0";
 
 export function metaOauthReady(){
  return process.env.META_APP_ID==="2572239026621118"&&
-  process.env.META_CONFIG_ID==="1789899515394629"&&
+  process.env.META_CONFIG_ID==="983608407667644"&&
   /^[a-f0-9]{32}$/i.test(process.env.META_APP_SECRET||"")&&
   /^[a-f0-9]{64}$/i.test(process.env.META_BRIDGE_KEY||"");
 }

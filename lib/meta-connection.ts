@@ -2,7 +2,7 @@ import "server-only";
 
 /** Estado exclusivamente del servidor: nunca se devuelven credenciales Meta al navegador. */
 const expectedAppId="2572239026621118";
-const expectedConfigurationId="1789899515394629";
+const expectedConfigurationId="983608407667644";
 
 export function metaIntegrationStatus(){
  const appId=(process.env.META_APP_ID||"").trim();
