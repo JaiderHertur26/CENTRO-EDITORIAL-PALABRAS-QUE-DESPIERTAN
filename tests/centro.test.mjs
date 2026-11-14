@@ -364,3 +364,17 @@ test("Feed e historias tienen aprobaciones independientes y diagnóstico de Meta
  assert.match(comp,/channel.endsWith\("_story"\)\?draft.storyApproved:draft.contentApproved/);
  assert.match(css,/meta-publisher-diagnostics/);
 });
+
+test("El enlace directo de TEST-001 abre el borrador privado sin publicar automáticamente",()=>{
+ const page=read("app/publicar/page.tsx");
+ const editor=read("components/MetaComposer.tsx");
+ assert.match(page,/searchParams:Promise<\{test\?:string\}>/);
+ assert.match(page,/autoOpenTest=\(await searchParams\).test==="1"/);
+ assert.match(editor,/didOpenLinkedTest=useRef\(false\)/);
+ assert.match(editor,/x\.id==="8077d038-98eb-4729-abe5-425a26267460"/);
+ assert.match(editor,/if\(test\)\{didOpenLinkedTest.current=true;openExisting\(test\);\}/);
+ assert.match(editor,/meta-story-approval/);
+ assert.match(editor,/Comprobar permisos sin publicar/);
+ assert.match(editor,/window.confirm/);
+ assert.match(editor,/liveConsent/);
+});

@@ -1,5 +1,5 @@
 "use client";
-import {useEffect,useState} from "react";
+import {useEffect,useRef,useState} from "react";
 import {Facebook,Instagram,Image as ImageIcon,CalendarDays,Save,Plus,ShieldCheck,LockKeyhole,CheckCircle2,AlertCircle,FileImage,Clock3} from "lucide-react";
 
 type ChannelName="facebook_feed"|"instagram_feed"|"facebook_story"|"instagram_story";
@@ -96,7 +96,8 @@ const dateCO=(iso:string|null)=>iso?new Intl.DateTimeFormat("es-CO",{timeZone:"A
 const imgUrl=(d:Draft,slot:Slot)=>d.media[slot]?"/api/meta/borradores/media?id="+encodeURIComponent(d.id)+"&slot="+slot+"&v="+encodeURIComponent(d.media[slot]!.sha256.slice(0,12)):"";
 const activeSlots=(d:Draft)=>new Set(channels.filter(c=>d.channels[c.key].enabled).map(c=>c.slot));
 
-export function MetaComposer({instagramAccountType}:{instagramAccountType:string|null}){
+export function MetaComposer({instagramAccountType,autoOpenTest=false}:{instagramAccountType:string|null;autoOpenTest?:boolean}){
+ const didOpenLinkedTest=useRef(false);
  const [draft,setDraft]=useState<Draft|null>(null);
  const [revision,setRevision]=useState<string|null>(null);
  const [savedBaseline,setSavedBaseline]=useState<Draft|null>(null);
@@ -141,6 +142,10 @@ export function MetaComposer({instagramAccountType}:{instagramAccountType:string
    const body=await res.json() as ResponseDraft;
    if(!res.ok)throw Error(body.error||"Error al consultar");
    setDrafts(body.drafts||[]);
+   if(autoOpenTest&&!didOpenLinkedTest.current){
+    const test=(body.drafts||[]).find(x=>x.id==="8077d038-98eb-4729-abe5-425a26267460"&&x.reference==="TEST-001");
+    if(test){didOpenLinkedTest.current=true;openExisting(test);}
+   }
   }catch(e){setError(e instanceof Error?e.message:"No se pudieron cargar borradores privados")}
   finally{setLoading(false)}
  }
@@ -283,6 +288,19 @@ export function MetaComposer({instagramAccountType}:{instagramAccountType:string
    JSON.stringify(draft.channels[key])===JSON.stringify(savedBaseline.channels[key]));
  const storyReady=hasStory&&!!draft.media.story&&!files.story&&storySavedAndUnchanged;
  return <div className="meta-publisher">
+  {draft.id==="8077d038-98eb-4729-abe5-425a26267460"&&<section className="section-card meta-publisher-quickstart">
+   <div className="section-card-header"><div>
+    <p className="kicker">TEST-001 · CONTINUACIÓN DIRECTA</p><h2>Terminar las dos historias</h2>
+    <p>El feed de ambas redes ya tiene recibos; no debe volver a enviarse. La imagen vertical está guardada. Las historias necesitan aprobación propia y verificación de permisos antes de cualquier envío.</p>
+   </div></div>
+   <div className="meta-publisher-pad">
+    <p>Imagen vertical: {draft.media.story?.width===1080&&draft.media.story?.height===1920?"1080 × 1920 guardada":"revisar archivo"} · Aprobación: {draft.storyApproved?"registrada":"pendiente"} · Publicación automática: desactivada</p>
+    <div className="meta-publisher-actions">
+     <button type="button" onClick={()=>document.getElementById("meta-story-approval")?.scrollIntoView({behavior:"smooth",block:"center"})}>Ir a aprobación de historias</button>
+     <button type="button" disabled={!revision||checking} onClick={()=>void refreshReadiness()}>{checking?"Comprobando…":"Comprobar permisos sin publicar"}</button>
+    </div>
+   </div>
+  </section>}
   <section className="meta-publisher-alert"><ShieldCheck size={20}/><div>
    <strong>Preparación editorial · envío real solo con confirmación expresa</strong>
    <p>Guardar un borrador o indicar una fecha no crea publicaciones ni historias en Meta. Solo TEST-001 podrá enviarse manualmente tras una segunda confirmación por cada red. La programación automática permanece desactivada.</p>
@@ -348,7 +366,7 @@ export function MetaComposer({instagramAccountType}:{instagramAccountType:string
       })}
      </div>
     </section>
-    <section className="section-card">
+    <section className="section-card" id="meta-story-approval">
      <div className="section-card-header"><div><p className="kicker">REVISIÓN AUTORAL</p><h2>Control de aprobación</h2></div></div>
      <div className="meta-publisher-pad">
       <label className="meta-publisher-approval"><input type="checkbox" checked={draft.contentApproved} disabled={!feedReady||!revision||busy} onChange={e=>change(d=>({...d,contentApproved:e.target.checked}))}/>
