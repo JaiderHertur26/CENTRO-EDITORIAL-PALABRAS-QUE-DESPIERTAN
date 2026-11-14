@@ -277,10 +277,10 @@ test("Editor privado de Facebook, Instagram, feeds e historias funciona sin publ
  assert.match(editor,/Guardar borrador privado/);
  assert.match(editor,/TEST-001/);
  assert.match(editor,/instagramAccountType==="BUSINESS"/);
- assert.match(editor,/Las fechas son objetivos editoriales/);
+ assert.match(editor,/Las fechas son objetivos editoriales|programación automática permanece desactivada/);
  assert.match(editor,/contentApproved:false/);
  assert.match(editor,/X-PQD-Expected-Revision/);
- assert.match(editor,/Sin enviar/);
+ assert.match(editor,/Consulta el registro de envíos/);
  assert.doesNotMatch(editor,/media_publish|fetch\(\s*["']https:\/\/graph\.facebook/);
 });
 test("Endpoints de borradores son privados, comprueban origen y no publican",()=>{
@@ -304,4 +304,20 @@ test("La sesión editorial se renueva en publicar e integraciones",()=>{
  assert.match(middleware,/\/publicar\/:path\*/);
  assert.match(middleware,/\/integraciones\/:path\*/);
  assert.match(middleware,/client\.auth\.getUser\(\)/);
+});
+
+test("Enviar TEST-001 requiere segunda confirmación y registra Meta IDs sin duplicar",()=>{
+ const comp=read("components/MetaComposer.tsx");
+ const api=read("app/api/meta/publicar/route.ts");
+ const bridge=read("lib/meta-drafts-bridge.ts");
+ assert.match(comp,/window.confirm/);
+ assert.match(comp,/liveConsent/);
+ assert.match(comp,/PUBLICAR_TEST001_UNA_VEZ/);
+ assert.match(comp,/record\?\./);
+ assert.match(comp,/!!record\|\|!draft.contentApproved/);
+ assert.match(api,/await verifyEditor\(\)/);
+ assert.match(api,/origin!==req.nextUrl.origin/);
+ assert.match(bridge,/metaPublishBridge/);
+ assert.match(bridge,/getSession/);
+ assert.doesNotMatch(api,/graph.facebook.com|access_token/);
 });

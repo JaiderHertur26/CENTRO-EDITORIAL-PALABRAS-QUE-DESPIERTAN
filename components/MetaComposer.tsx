@@ -13,6 +13,9 @@ type Draft={
  media:{feed:MediaInfo|null;story:MediaInfo|null};
 };
 type ResponseDraft={draft?:Draft;drafts?:Draft[];error?:string;ok?:boolean;limited?:boolean};
+type DeliveryRecord={status:"reserved"|"media_prepared"|"publishing"|"published"|"rejected"|"needs_review";
+ channel:ChannelName;updatedAt:string;metaPostId:string|null;permalink:string|null;reason:string|null;};
+type Deliveries=Partial<Record<ChannelName,DeliveryRecord|null>>;
 const channels:{key:ChannelName;label:string;platform:"fb"|"ig";slot:Slot;hint:string}[]=[
  {key:"facebook_feed",label:"Publicación de Facebook",platform:"fb",slot:"feed",hint:"Texto y fotografía en la fanpage"},
  {key:"instagram_feed",label:"Publicación de Instagram",platform:"ig",slot:"feed",hint:"Fotografía y leyenda del perfil"},
@@ -68,11 +71,23 @@ export function MetaComposer({instagramAccountType}:{instagramAccountType:string
  const [drafts,setDrafts]=useState<Draft[]>([]);
  const [loading,setLoading]=useState(true);
  const [busy,setBusy]=useState(false);
+ const [publishing,setPublishing]=useState<ChannelName|null>(null);
+ const [liveConsent,setLiveConsent]=useState(false);
+ const [deliveries,setDeliveries]=useState<Deliveries>({});
  const [message,setMessage]=useState("");
  const [error,setError]=useState("");
  const [files,setFiles]=useState<{feed:File|null;story:File|null}>({feed:null,story:null});
  const [preview,setPreview]=useState<{feed:string;story:string}>({feed:"",story:""});
  useEffect(()=>{setDraft(fresh());void reload();},[]);
+ useEffect(()=>{
+  if(!draft?.id||!revision){setDeliveries({});return}
+  let cancelled=false;
+  fetch("/api/meta/publicar?id="+encodeURIComponent(draft.id),{cache:"no-store"})
+   .then(async r=>r.ok?await r.json():null)
+   .then(data=>{if(!cancelled)setDeliveries(data?.deliveries||{})})
+   .catch(()=>{if(!cancelled)setDeliveries({})});
+  return ()=>{cancelled=true};
+ },[draft?.id,revision]);
  useEffect(()=>{
   const feed=files.feed?URL.createObjectURL(files.feed):"";
   const story=files.story?URL.createObjectURL(files.story):"";
@@ -89,10 +104,10 @@ export function MetaComposer({instagramAccountType}:{instagramAccountType:string
   finally{setLoading(false)}
  }
  function openExisting(x:Draft){
-  setDraft(x);setRevision(x.updatedAt);setFiles({feed:null,story:null});setMessage("");setError("");
+  setDraft(x);setRevision(x.updatedAt);setFiles({feed:null,story:null});setMessage("");setError("");setLiveConsent(false);
  }
  function newOne(){
-  setDraft(fresh());setRevision(null);setFiles({feed:null,story:null});setMessage("");setError("");
+  setDraft(fresh());setRevision(null);setFiles({feed:null,story:null});setMessage("");setError("");setLiveConsent(false);
  }
  function loadTest(){
   const exists=drafts.find(x=>x.reference==="TEST-001");
@@ -110,7 +125,7 @@ export function MetaComposer({instagramAccountType}:{instagramAccountType:string
    const next=update(old);
    return invalidatesApproval?{...next,contentApproved:false,approvalAt:null}:next;
   });
-  setMessage("");
+  setMessage("");setLiveConsent(false);
  }
  function changeChannel(key:ChannelName,patch:Partial<Channel>,invalidate=false){
   change(d=>({...d,channels:{...d.channels,[key]:{...d.channels[key],...patch}}}),invalidate);
@@ -165,6 +180,28 @@ export function MetaComposer({instagramAccountType}:{instagramAccountType:string
   }catch(e){setError(e instanceof Error?e.message:"Error al guardar el borrador")}
   finally{setBusy(false)}
  }
+ async function publishTest(channel:"facebook_feed"|"instagram_feed"){
+  if(!draft||!revision||!liveConsent||publishing||busy)return;
+  if(draft.reference!=="TEST-001"||!draft.contentApproved||draft.channels[channel].mode!=="manual")return;
+  if(!window.confirm("ESTO PUBLICARÁ realmente TEST-001 en "+(channel==="facebook_feed"?"la fanpage Facebook":"Instagram")+". Se registrará un envío irreversible y no se podrá repetir. ¿Confirmas el envío?"))return;
+  setPublishing(channel);setError("");setMessage("");
+  try{
+   const response=await fetch("/api/meta/publicar",{
+    method:"POST",headers:{"Content-Type":"application/json"},
+    body:JSON.stringify({id:draft.id,channel,revision,confirm:"PUBLICAR_TEST001_UNA_VEZ"})
+   });
+   const data=await response.json() as {receipt?:DeliveryRecord;error?:string;duplicatePrevented?:boolean};
+   if(data.receipt){
+    setDeliveries(old=>({...old,[channel]:data.receipt}));
+    if(data.receipt.status==="published"){
+     setMessage("Publicación confirmada por Meta en "+(channel==="facebook_feed"?"Facebook":"Instagram")+". Identificador registrado.");
+    }else{
+     setError("El intento quedó registrado como "+data.receipt.status+". No repitas el envío; comprueba su estado antes de continuar.");
+    }
+   }else throw Error(data.error||"Meta no confirmó el envío. No vuelvas a pulsar sin revisar el registro.");
+  }catch(e){setError(e instanceof Error?e.message:"Fallo al publicar; revisa los registros antes de repetir");}
+  finally{setPublishing(null);setLiveConsent(false);}
+ }
  function exportDraft(){
   if(!draft)return;
   const withoutMedia={...draft,media:{feed:draft.media.feed?{...draft.media.feed}:null,story:draft.media.story?{...draft.media.story}:null}};
@@ -178,8 +215,8 @@ export function MetaComposer({instagramAccountType}:{instagramAccountType:string
  const imagesReady=[...active].every(slot=>!!draft.media[slot]&&!files[slot]);
  return <div className="meta-publisher">
   <section className="meta-publisher-alert"><ShieldCheck size={20}/><div>
-   <strong>Modo preparación · sin envío real</strong>
-   <p>Guardar un borrador o indicar una fecha no crea publicaciones ni historias en Meta. Las fechas son objetivos editoriales; la programación real todavía está desactivada.</p>
+   <strong>Preparación editorial · envío real solo con confirmación expresa</strong>
+   <p>Guardar un borrador o indicar una fecha no crea publicaciones ni historias en Meta. Solo TEST-001 podrá enviarse manualmente tras una segunda confirmación por cada red. La programación automática permanece desactivada.</p>
   </div></section>
   <div className="meta-publisher-actions">
    <button type="button" onClick={newOne}><Plus size={16}/> Nuevo borrador</button>
@@ -251,12 +288,40 @@ export function MetaComposer({instagramAccountType}:{instagramAccountType:string
       {draft.approvalAt&&<p className="meta-publisher-help">Aprobación registrada: {dateCO(draft.approvalAt)}.</p>}
       <div className="meta-publisher-save">
        <button disabled={busy} className="gold-button" onClick={()=>void save()}><Save size={16}/>{busy?"Guardando…":"Guardar borrador privado"}</button>
-       <span>Publicación real desactivada <LockKeyhole size={14}/></span>
+       <span>Guardar no publica <LockKeyhole size={14}/></span>
       </div>
       {message&&<p className="meta-publisher-success" role="status"><CheckCircle2 size={16}/>{message}</p>}
       {error&&<p className="meta-publisher-error" role="alert"><AlertCircle size={16}/>{error}</p>}
      </div>
     </section>
+    {draft.reference==="TEST-001"&&<section className="section-card">
+     <div className="section-card-header"><div>
+      <p className="kicker">PRUEBA REAL · DOBLE CONFIRMACIÓN</p><h2>Enviar TEST-001 a Meta</h2>
+      <p>Solo publicaciones de feed autorizadas de TEST-001. Cada red se envía por separado; nunca se reintenta automáticamente. Las historias y la agenda quedan excluidas.</p>
+     </div></div>
+     <div className="meta-publisher-pad">
+      <p className="meta-publisher-help">{draft.contentApproved?"Imagen y dos textos aprobados.":"Debes guardar y aprobar el contenido antes de cualquier envío."} La publicación será visible públicamente en la red elegida.</p>
+      <label className="meta-publisher-approval"><input type="checkbox" checked={liveConsent} disabled={!draft.contentApproved||busy||!!publishing} onChange={e=>setLiveConsent(e.target.checked)}/>
+       <span><strong>Autorizo el envío real e inmediato de la prueba TEST-001</strong><small>Cada envío requiere además una confirmación explícita. No altera ART, PD ni publicaciones previamente programadas.</small></span></label>
+      <div className="meta-publisher-actions">
+       {(["facebook_feed","instagram_feed"] as const).map(channel=>{
+        const record=deliveries[channel];
+        const platform=channel==="facebook_feed"?"Facebook":"Instagram";
+        return <div key={channel} className="meta-publisher-delivery">
+         <strong>{platform}</strong>
+         {record?<p>Registro: {record.status==="published"?"Publicado":record.status==="needs_review"?"Necesita revisión":record.status} · {dateCO(record.updatedAt)}</p>:<p>Sin envío registrado</p>}
+         {record?.metaPostId&&<small>Meta ID: {record.metaPostId}</small>}
+         {record?.permalink&&/^https:\/\//.test(record.permalink)&&<a href={record.permalink} target="_blank" rel="noreferrer">Ver publicación real</a>}
+         {record?.reason&&<small>Código técnico: {record.reason}</small>}
+         <button type="button" className="gold-button"
+          disabled={!!record||!draft.contentApproved||!liveConsent||busy||!!publishing||!draft.channels[channel].enabled||draft.channels[channel].mode!=="manual"||!revision}
+          onClick={()=>void publishTest(channel)}>{publishing===channel?"Enviando…":record?"Envío bloqueado contra duplicación":"Publicar TEST-001 en "+platform}</button>
+        </div>;
+       })}
+      </div>
+      <p className="meta-publisher-help">Si un intento queda en revisión, no repitas el envío: puede haber llegado a Meta aunque no se haya recibido su respuesta. El registro queda bloqueado para impedir duplicados.</p>
+     </div>
+    </section>}
    </div>
    <aside className="meta-publisher-side">
     <section className="section-card">
@@ -282,7 +347,7 @@ export function MetaComposer({instagramAccountType}:{instagramAccountType:string
      <div className="meta-publisher-saved">
       {loading?<p>Cargando borradores…</p>:drafts.length===0?<p>No hay borradores guardados todavía.</p>:
        drafts.map(x=><button key={x.id} type="button" onClick={()=>openExisting(x)} className={draft.id===x.id?"selected":""}>
-        <strong>{x.title}</strong><small>{x.reference||"Sin código"} · {dateCO(x.updatedAt)}</small><small>{x.contentApproved?"Contenido aprobado":"Pendiente de aprobación"} · Sin enviar</small>
+        <strong>{x.title}</strong><small>{x.reference||"Sin código"} · {dateCO(x.updatedAt)}</small><small>{x.contentApproved?"Contenido aprobado":"Pendiente de aprobación"} · Consulta el registro de envíos</small>
        </button>)}
       <p>Los borradores se almacenan de forma privada. No crean publicaciones ni modifican los calendarios de la revista.</p>
      </div>

@@ -22,3 +22,22 @@ export async function draftBridge(method:Method,media:boolean,query:URLSearchPar
   ...(body!==undefined?{body}:{})
  });
 }
+
+export async function metaPublishBridge(method:"GET"|"POST",query:URLSearchParams,body?:string){
+ const bridge=process.env.META_BRIDGE_KEY||"";
+ if(!/^[a-f0-9]{64}$/i.test(bridge))throw Error("Conexión privada de Meta no disponible");
+ const client=await sessionClient();
+ if(!client)throw Error("Sesión no disponible");
+ const {data:{session},error}=await client.auth.getSession();
+ if(error||!session?.access_token)throw Error("Sesión editorial caducada");
+ const url=new URL("https://www.palabrasquedespiertan.online/api/editorial/meta/publish");
+ url.search=query.toString();
+ return fetch(url,{method,cache:"no-store",signal:AbortSignal.timeout(59000),
+  headers:{
+   "Authorization":"Bearer "+session.access_token,
+   "X-PQD-Meta-Bridge":bridge,
+   ...(body!==undefined?{"Content-Type":"application/json"}:{})
+  },
+  ...(body!==undefined?{body}:{})
+ });
+}
