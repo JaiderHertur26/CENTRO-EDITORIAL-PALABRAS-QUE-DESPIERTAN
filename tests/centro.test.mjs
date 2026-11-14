@@ -177,3 +177,17 @@ test("La URL de retorno de Meta está reservada pero OAuth y publicaciones sigue
  assert.match(panel,/https:\/\/c-edi-palabras-que-despiertan\.vercel\.app\/api\/meta\/callback/);
  assert.match(panel,/No pulses todavía/);
 });
+
+test("Las tres variables Meta se validan en el servidor sin exponer claves",()=>{
+ const check=read("lib/meta-connection.ts");
+ const panel=read("app/integraciones/page.tsx");
+ assert.match(check,/process\.env\.META_APP_ID/);
+ assert.match(check,/process\.env\.META_CONFIG_ID/);
+ assert.match(check,/process\.env\.META_APP_SECRET/);
+ assert.match(check,/verifyMetaAppCredentials/);
+ assert.match(check,/grant_type:"client_credentials"/);
+ assert.match(check,/graph\.facebook\.com\/v26\.0\/oauth\/access_token/);
+ assert.match(check,/automaticPublishingEnabled:false/);
+ assert.match(panel,/await verifyMetaAppCredentials\(\)/);
+ assert.doesNotMatch(panel,/(?:value|href)=\{process\.env\./);
+});

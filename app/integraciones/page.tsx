@@ -2,19 +2,33 @@ import Link from "next/link";
 import {Cable,ShieldCheck,Instagram,Facebook,ExternalLink,LockKeyhole,CalendarClock,AlertCircle} from "lucide-react";
 import {Shell} from "@/components/Shell";
 import {requireEditor} from "@/lib/access";
-import {metaIntegrationStatus} from "@/lib/meta-connection";
+import {metaIntegrationStatus,verifyMetaAppCredentials} from "@/lib/meta-connection";
 
 export const dynamic="force-dynamic";
 
 export default async function Integraciones(){
  const user=await requireEditor();
  const state=metaIntegrationStatus();
+ const credentials=await verifyMetaAppCredentials();
  return <Shell email={user.email||"Dirección"} section="Integraciones">
   <div className="page-heading">
    <p className="kicker">CONECTORES OFICIALES · META GRAPH API</p>
    <h1>Una revista. <em>Dos redes sociales.</em></h1>
    <p>Panel de preparación y seguridad para publicar desde el Centro Editorial en Facebook e Instagram. Ninguna publicación se enviará hasta autorizar las cuentas y superar una prueba de conexión.</p>
   </div>
+  <section className="section-card meta-connect-section">
+   <div className="section-card-header"><div>
+     <p className="kicker">COMPROBACIÓN EN SERVIDOR · PRODUCCIÓN</p>
+     <h2>Credenciales oficiales</h2>
+     <p>Las claves se verifican sin mostrarlas ni enviarlas al navegador. Esta revisión no autoriza cuentas y no publica contenido.</p>
+   </div></div>
+   <div className="meta-connect-redirect">
+     <p><strong>Variables de Meta:</strong> {state.configuredCount} de 3 registradas en este despliegue.</p>
+     <p><strong>Identificadores oficiales:</strong> {state.idsMatch?"Coinciden con la aplicación y la configuración de Instagram":"Pendientes de corrección"}.</p>
+     <p><strong>Credenciales de aplicación:</strong> {credentials==="verified"?"Validadas por Meta":credentials==="unavailable"?"No fue posible contactar Meta; se podrá reintentar":credentials==="missing"?"Faltan variables":"No se pudieron validar; revisar valores en Vercel"}.</p>
+     <p><strong>Permisos de publicación:</strong> pendientes de autorización en Facebook e Instagram.</p>
+   </div>
+  </section>
   <section className="section-card meta-connect-section">
    <div className="section-card-header"><div>
      <p className="kicker">META · INICIO DE SESIÓN UNIFICADO</p>
