@@ -287,6 +287,8 @@ export function MetaComposer({instagramAccountType,autoOpenTest=false}:{instagra
   (["facebook_story","instagram_story"] as const).every(key=>
    JSON.stringify(draft.channels[key])===JSON.stringify(savedBaseline.channels[key]));
  const storyReady=hasStory&&!!draft.media.story&&!files.story&&storySavedAndUnchanged;
+ const storyApprovalStored=draft.storyApproved===true&&savedBaseline?.storyApproved===true&&!!savedBaseline.storyApprovalAt&&storySavedAndUnchanged;
+ const feedApprovalStored=draft.contentApproved===true&&savedBaseline?.contentApproved===true&&!!savedBaseline.approvalAt;
  return <div className="meta-publisher">
   {draft.id==="8077d038-98eb-4729-abe5-425a26267460"&&<section className="section-card meta-publisher-quickstart">
    <div className="section-card-header"><div>
@@ -294,7 +296,7 @@ export function MetaComposer({instagramAccountType,autoOpenTest=false}:{instagra
     <p>El feed de ambas redes ya tiene recibos; no debe volver a enviarse. La imagen vertical está guardada. Las historias necesitan aprobación propia y verificación de permisos antes de cualquier envío.</p>
    </div></div>
    <div className="meta-publisher-pad">
-    <p>Imagen vertical: {draft.media.story?.width===1080&&draft.media.story?.height===1920?"1080 × 1920 guardada":"revisar archivo"} · Aprobación: {draft.storyApproved?"registrada":"pendiente"} · Publicación automática: desactivada</p>
+    <p>Imagen vertical: {draft.media.story?.width===1080&&draft.media.story?.height===1920?"1080 × 1920 guardada":"revisar archivo"} · Aprobación: {storyApprovalStored?"guardada":draft.storyApproved?"marcada SIN guardar":"pendiente"} · Publicación automática: desactivada</p>
     <div className="meta-publisher-actions">
      <button type="button" onClick={()=>document.getElementById("meta-story-approval")?.scrollIntoView({behavior:"smooth",block:"center"})}>Ir a aprobación de historias</button>
      <button type="button" disabled={!revision||checking} onClick={()=>void refreshReadiness()}>{checking?"Comprobando…":"Comprobar permisos sin publicar"}</button>
@@ -376,7 +378,8 @@ export function MetaComposer({instagramAccountType,autoOpenTest=false}:{instagra
       <label className="meta-publisher-approval"><input type="checkbox" checked={draft.storyApproved===true} disabled={!storyReady||!revision||busy} onChange={e=>change(d=>({...d,storyApproved:e.target.checked}))}/>
        <span><strong>Aprobar específicamente la imagen vertical y las historias</strong><small>La imagen 9:16 debe revisarse para Facebook e Instagram; esta aprobación no autoriza enviarlas y no modifica la aprobación del feed.</small></span></label>
       {!storyReady&&<p className="meta-publisher-help">Para aprobar historias: activa los destinos deseados, guarda el borrador y confirma la imagen 9:16. Solo después de guardar los cambios se habilitará la aprobación.</p>}
-      {draft.storyApprovalAt&&<p className="meta-publisher-help">Historias aprobadas: {dateCO(draft.storyApprovalAt)}.</p>}
+      {draft.storyApproved&&!storyApprovalStored&&<p className="meta-publisher-error" role="status"><AlertCircle size={16}/>La casilla está marcada, pero todavía NO has guardado la aprobación. Pulsa «Guardar borrador privado» para registrarla.</p>}
+      {storyApprovalStored&&draft.storyApprovalAt&&<p className="meta-publisher-help">Historias aprobadas y guardadas: {dateCO(draft.storyApprovalAt)}.</p>}
       <div className="meta-publisher-save">
        <button disabled={busy} className="gold-button" onClick={()=>void save()}><Save size={16}/>{busy?"Guardando…":"Guardar borrador privado"}</button>
        <span>Guardar no publica <LockKeyhole size={14}/></span>
@@ -391,7 +394,7 @@ export function MetaComposer({instagramAccountType,autoOpenTest=false}:{instagra
       <p>Publicaciones de feed e historias de TEST-001 independientes. Las historias requieren imagen vertical y aprobación específica; Instagram debe ser Business y Facebook requiere los permisos adecuados. La programación automática continúa desactivada.</p>
      </div></div>
      <div className="meta-publisher-pad">
-      <p className="meta-publisher-help">Feed: {draft.contentApproved?"aprobado":"pendiente"}. Historias: {draft.storyApproved?"aprobadas":"pendientes de aprobación propia"}. Ninguno de estos estados implica autorización para enviar; la publicación será visible públicamente en la red elegida.</p>
+      <p className="meta-publisher-help">Feed: {feedApprovalStored?"aprobado y guardado":"pendiente"}. Historias: {storyApprovalStored?"aprobadas y guardadas":draft.storyApproved?"marcadas, falta GUARDAR":"pendientes de aprobación propia"}. Ninguno de estos estados implica autorización para enviar; la publicación será visible públicamente en la red elegida.</p>
       <div className="meta-publisher-actions">
        <button type="button" disabled={checking||busy||!!publishing} onClick={()=>void refreshReadiness()}>
         <ShieldCheck size={16}/>{checking?"Comprobando permisos de Meta…":"Volver a comprobar permisos sin publicar"}
@@ -419,14 +422,14 @@ export function MetaComposer({instagramAccountType,autoOpenTest=false}:{instagra
         return <div key={channel} className="meta-publisher-delivery">
          <strong>{platform}</strong>
          {record?<p>Registro: {record.status==="published"?"Publicado":record.status==="needs_review"?"Necesita revisión":record.status} · {dateCO(record.updatedAt)}</p>:<p>Sin envío registrado</p>}
-         {!record&&<p className="meta-publisher-readiness">{checking?"Comprobando permisos…":
+         {!record&&<p className="meta-publisher-readiness">{channel.endsWith("_story")&&draft.storyApproved&&!storyApprovalStored?"Aprobación sin guardar: pulsa «Guardar borrador privado» antes de comprobar permisos.":checking?"Comprobando permisos…":
           readiness?.channels[channel]?.ready?"Verificación previa: lista":
           readableReason(readiness?.channels[channel]?.reason||"META_PREFLIGHT_UNAVAILABLE")}</p>}
          {record?.metaPostId&&<small>Meta ID: {record.metaPostId}</small>}
          {record?.permalink&&/^https:\/\//.test(record.permalink)&&<a href={record.permalink} target="_blank" rel="noreferrer">Ver publicación real</a>}
          {record?.reason&&<small>Código técnico: {record.reason}</small>}
          <button type="button" className="gold-button"
-          disabled={!!record||checking||!readiness?.channels[channel]?.ready||readiness.revision!==revision||!(channel.endsWith("_story")?draft.storyApproved:draft.contentApproved)||!liveConsent||busy||!!publishing||!draft.channels[channel].enabled||draft.channels[channel].mode!=="manual"||!revision}
+          disabled={!!record||checking||!readiness?.channels[channel]?.ready||readiness.revision!==revision||!(channel.endsWith("_story")?storyApprovalStored:feedApprovalStored)||!liveConsent||busy||!!publishing||!draft.channels[channel].enabled||draft.channels[channel].mode!=="manual"||!revision}
           onClick={()=>void publishTest(channel)}>{publishing===channel?"Enviando…":record?"Envío bloqueado contra duplicación":"Publicar TEST-001 en "+platform}</button>
         </div>;
        })}

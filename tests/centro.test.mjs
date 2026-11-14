@@ -378,3 +378,12 @@ test("El enlace directo de TEST-001 abre el borrador privado sin publicar autom�
  assert.match(editor,/window.confirm/);
  assert.match(editor,/liveConsent/);
 });
+
+test("Una casilla marcada sin guardar no se presenta como aprobacion persistida ni habilita envio",()=>{
+ const ui=read("components/MetaComposer.tsx");
+ assert.match(ui,/const storyApprovalStored=draft.storyApproved===true&&savedBaseline\?\.storyApproved===true/);
+ assert.match(ui,/La casilla está marcada, pero todavía NO has guardado la aprobación/);
+ assert.match(ui,/Historias: \{storyApprovalStored\?"aprobadas y guardadas":draft.storyApproved\?"marcadas, falta GUARDAR"/);
+ assert.match(ui,/Aprobación sin guardar: pulsa «Guardar borrador privado»/);
+ assert.match(ui,/channel.endsWith\("_story"\)\?storyApprovalStored:feedApprovalStored/);
+});
