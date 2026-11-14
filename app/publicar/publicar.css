@@ -6,3 +6,7 @@
 .meta-publisher-delivery>a{font-size:12px;color:#e7c48e;text-decoration:underline}
 .meta-publisher-delivery>button{font-size:12px;padding:12px 13px;border:0;border-radius:7px;background:#d5a763;color:#271705;font-weight:700}
 .meta-publisher-delivery>button:disabled{opacity:.6;cursor:not-allowed;background:#433222;color:#cbb18e}
+
+.meta-publisher-diagnostics{display:grid;gap:8px;padding:14px 16px;margin:14px 0;border:1px solid #59482e;background:#100d09;border-radius:10px}
+.meta-publisher-diagnostics>strong{font-family:Georgia,serif;font-size:15px;color:#d4ad6c}
+.meta-publisher-diagnostics>p{font-size:13px;color:#cdb895;line-height:1.5;margin:0}

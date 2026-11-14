@@ -346,3 +346,18 @@ test("Cuatro destinos Meta con historias condicionadas y sin cron activo",()=>{
  assert.match(page,/programación automática continúa desactivada/);
  assert.doesNotMatch(src,/setInterval|setTimeout\(.*publishTest|crons\//);
 });
+
+test("Feed e historias tienen aprobaciones independientes y diagnóstico de Meta en solo lectura",()=>{
+ const comp=read("components/MetaComposer.tsx");
+ const css=read("app/publicar/publicar.css");
+ assert.match(comp,/Aprobar publicaciones del feed/);
+ assert.match(comp,/Aprobar específicamente la imagen vertical y las historias/);
+ assert.match(comp,/storyApproved/);
+ assert.match(comp,/storyApprovalAt/);
+ assert.match(comp,/storySavedAndUnchanged/);
+ assert.match(comp,/setSavedBaseline\(current\)/);
+ assert.match(comp,/storyAccounts/);
+ assert.match(comp,/Consulta sin publicaciones|consulta sin publicaciones/);
+ assert.match(comp,/channel.endsWith\("_story"\)\?draft.storyApproved:draft.contentApproved/);
+ assert.match(css,/meta-publisher-diagnostics/);
+});
