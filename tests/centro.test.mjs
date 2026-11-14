@@ -242,3 +242,12 @@ test("Facebook tiene verificación propia y no se confunde con los cinco permiso
  assert.match(api,/facebookPageVerified:status\.facebookPageVerified===true/);
  assert.match(api,/facebookCanCreateContent:status\.facebookCanCreateContent===true/);
 });
+
+test("La doble verificación Meta no presenta Facebook como pendiente cuando la página está confirmada",()=>{
+ const panel=read("app/integraciones/page.tsx");
+ assert.match(panel,/facebookCanPost\?"Facebook también está identificado y autorizado para crear contenido/);
+ assert.match(panel,/Preparada · aprobación de prueba pendiente/);
+ assert.match(panel,/No se ha enviado ninguna publicación/);
+ assert.doesNotMatch(panel,/El siguiente paso será integrar Facebook/);
+ assert.match(panel,/el envío desde el Centro Editorial continúa desactivado/);
+});

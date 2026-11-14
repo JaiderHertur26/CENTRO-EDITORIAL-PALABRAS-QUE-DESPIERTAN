@@ -72,7 +72,7 @@ export default async function Integraciones({searchParams}:{searchParams:Promise
      {hasAccess&&!facebookGranted&&<p><strong>Permisos de Facebook por incorporar al token:</strong> {facebookMissing.join(" · ")}. Ya se añadieron a la configuración de Meta, pero necesitas renovar el consentimiento para concederlos.</p>}
      {facebookGranted&&<p><strong>Facebook:</strong> {facebookDescription}{facebookVerified&&authorization.facebookPageId&&" Identificador verificado: "+authorization.facebookPageId+"."}</p>}
      {authorization.connected&&authorization.expiresAt&&authorization.expiresAt>0&&<p><strong>Vencimiento registrado:</strong> {new Intl.DateTimeFormat("es-CO",{timeZone:"America/Bogota",dateStyle:"long"}).format(new Date(authorization.expiresAt*1000))}.</p>}
-     {confirmed&&<p><strong>Cuenta confirmada:</strong> @{authorization.username}. El siguiente paso será integrar Facebook; todavía no se pueden publicar contenidos.</p>}
+     {confirmed&&<p><strong>Cuenta confirmada:</strong> @{authorization.username}. {facebookCanPost?"Facebook también está identificado y autorizado para crear contenido. El siguiente paso es una prueba controlada expresamente aprobada; el envío desde el Centro Editorial continúa desactivado.":facebookVerified?"La fanpage está identificada; faltan comprobar todas sus capacidades de publicación.":"La identidad y capacidad de la fanpage todavía deben comprobarse."}</p>}
      {authorization.ready&&credentials==="verified"&&(!authorization.connected||expired||(hasAccess&&!facebookGranted))&&<form method="POST" action="/api/meta/connect">
        <button type="submit" className="gold-button">{expired?"Renovar autorización de Meta":hasAccess?"Actualizar permisos de Instagram y Facebook":"Autorizar Instagram con Meta"}</button>
      </form>}
@@ -113,8 +113,8 @@ export default async function Integraciones({searchParams}:{searchParams:Promise
      <p>{hasAccess?"Consentimiento de Instagram recibido y cifrado. "+(confirmed?"Su identidad ha sido confirmada.":"Falta confirmar su identidad mediante Meta.")+" "+(facebookVerified?"La fanpage oficial también quedó identificada. Falta la prueba de publicación.":facebookGranted?"Los permisos de Facebook ya fueron concedidos; su identidad está por verificar.":"Facebook todavía no concedió todos sus permisos."):"Pendiente del consentimiento de Instagram y Facebook."}</p></div>
      <span className="meta-connect-state">{confirmed?facebookVerified?"Ambas cuentas identificadas · prueba pendiente":facebookGranted?"Instagram verificada · página pendiente":"Instagram verificada · Facebook pendiente":hasAccess?facebookGranted?"Permisos de ambas redes · cuentas por verificar":"Instagram autorizada · permisos de Facebook pendientes":"Pendiente"}</span></li>
     <li><span>04</span><div><strong>Prueba controlada y calendario</strong>
-     <p>Antes de habilitar envíos: confirmar la fanpage, aprobar una prueba de publicación, verificar el identificador real y evitar duplicaciones con las publicaciones ya programadas.</p></div>
-     <span className="meta-connect-state">Pendiente</span></li>
+     <p>{facebookCanPost&&confirmed?"Ambas cuentas están identificadas y el rol de publicación de Facebook está comprobado. Falta aprobar explícitamente un contenido de prueba, validar el resultado real en ambas redes y proteger las publicaciones ya programadas frente a duplicaciones. No se ha enviado ninguna publicación.":"Antes de habilitar envíos: verificar ambas identidades y roles, aprobar una prueba de publicación, comprobar su identificador real y evitar duplicaciones con las publicaciones programadas."}</p></div>
+     <span className="meta-connect-state">{facebookCanPost&&confirmed?"Preparada · aprobación de prueba pendiente":"Pendiente"}</span></li>
    </ol>
   </section>
   <div className="meta-connect-warning"><ShieldCheck size={19}/>
