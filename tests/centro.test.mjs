@@ -147,3 +147,20 @@ test("El Centro muestra vistas de la revista en un panel solo para dirección",(
  assert.match(home,/readVisitStats\(30\)/);
  assert.match(home,/PÁGINAS VISTAS/);
 });
+
+test("Integraciones Meta: el paso inicial es privado, no publica contenido y conserva la seguridad",()=>{
+ const page=read("app/integraciones/page.tsx");
+ const state=read("lib/meta-connection.ts");
+ const shell=read("components/Shell.tsx");
+ assert.match(page,/await requireEditor\(\)/);
+ assert.match(page,/Meta Graph API/i);
+ assert.match(page,/facebook\.com\/PalabrasQueDespiertan01/);
+ assert.match(page,/instagram\.com\/palabrasquedespiertan/);
+ assert.match(page,/developers\.facebook\.com\/apps/);
+ assert.match(page,/Publicación automática inactiva/);
+ assert.match(page,/no crea publicaciones en redes/);
+ assert.match(shell,/href:"\/integraciones"/);
+ assert.match(state,/automaticPublishingEnabled:false/);
+ assert.match(state,/permissionsVerified:false/);
+ assert.doesNotMatch(page,/fetch\(|\.post\(|access_token|META_APP_SECRET/);
+});
