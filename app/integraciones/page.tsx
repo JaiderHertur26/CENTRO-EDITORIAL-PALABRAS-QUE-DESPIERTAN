@@ -3,13 +3,15 @@ import {Cable,ShieldCheck,Instagram,Facebook,ExternalLink,LockKeyhole,CalendarCl
 import {Shell} from "@/components/Shell";
 import {requireEditor} from "@/lib/access";
 import {metaIntegrationStatus,verifyMetaAppCredentials} from "@/lib/meta-connection";
+import {metaVaultStatus} from "@/lib/meta-oauth";
 
 export const dynamic="force-dynamic";
 
-export default async function Integraciones(){
+export default async function Integraciones({searchParams}:{searchParams:Promise<{meta?:string}>}){
  const user=await requireEditor();
  const state=metaIntegrationStatus();
- const credentials=await verifyMetaAppCredentials();
+ const [credentials,authorization]=await Promise.all([verifyMetaAppCredentials(),metaVaultStatus()]);
+ const result=(await searchParams).meta;
  return <Shell email={user.email||"Dirección"} section="Integraciones">
   <div className="page-heading">
    <p className="kicker">CONECTORES OFICIALES · META GRAPH API</p>
@@ -37,7 +39,18 @@ export default async function Integraciones(){
    </div><span className="meta-connect-pending"><LockKeyhole size={15}/> Autorización pendiente</span></div>
    <div className="meta-connect-redirect">
      <code>https://c-edi-palabras-que-despiertan.vercel.app/api/meta/callback</code>
-     <p>En Meta: «API setup with Unified login» → «URL de redireccionamiento» → «Guardar». No pulses todavía «Generar tokens de acceso» ni «Publicar app».</p>
+     <p>La dirección de retorno ya está registrada en Meta. El botón siguiente abrirá el inicio de sesión oficial y permitirá seleccionar la cuenta de Instagram autorizada.</p>
+     {result==="autorizacion-recibida"&&<p><strong>Autorización recibida y guardada cifrada.</strong> Falta validar que la cuenta autorizada sea @palabrasquedespiertan; todavía no se pueden publicar contenidos.</p>}
+     {result==="cancelado"&&<p><strong>Autorización cancelada.</strong> No hemos modificado las publicaciones ni los calendarios.</p>}
+     {result==="error"&&<p><strong>No se completó la autorización.</strong> Revisa la cuenta seleccionada en Meta y los permisos. No se guardó una conexión incompleta.</p>}
+     <p><strong>Estado de acceso:</strong> {authorization.connected
+      ?authorization.verifiedAccount?"Instagram autorizado y verificado":"Token protegido recibido; verificación de la cuenta aún pendiente"
+      :authorization.unavailable?"No se pudo consultar el almacén privado":"Instagram todavía sin autorizar"}.</p>
+     {authorization.ready&&credentials==="verified"&&!authorization.connected&&<form method="POST" action="/api/meta/connect">
+       <button type="submit" className="gold-button">Autorizar Instagram con Meta</button>
+     </form>}
+     {authorization.connected&&<p>Permisos concedidos: {authorization.scopes.includes("instagram_content_publish")?"Publicación de contenido · ":""}{authorization.scopes.includes("instagram_basic")?"Acceso básico":""}.</p>}
+     <p>No selecciones cuentas publicitarias si Meta permite omitirlas. Este procedimiento no publica ningún mensaje, artículo ni historia.</p>
    </div>
   </section>
   <section className="section-card meta-connect-section">

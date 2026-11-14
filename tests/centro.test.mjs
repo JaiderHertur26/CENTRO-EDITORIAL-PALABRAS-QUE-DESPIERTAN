@@ -165,17 +165,25 @@ test("Integraciones Meta: el paso inicial es privado, no publica contenido y con
  assert.doesNotMatch(page,/fetch\(|\.post\(|access_token|META_APP_SECRET/);
 });
 
-test("La URL de retorno de Meta está reservada pero OAuth y publicaciones siguen desactivados",()=>{
+test("La URL de retorno de Meta valida estado CSRF y no publica contenido",()=>{
  const route=read("app/api/meta/callback/route.ts");
+ const start=read("app/api/meta/connect/route.ts");
+ const oauth=read("lib/meta-oauth.ts");
  const panel=read("app/integraciones/page.tsx");
- assert.match(route,/oauthEnabled:false/);
  assert.match(route,/publishingEnabled:false/);
+ assert.match(route,/timingSafeEqual/);
  assert.match(route,/query\.has\("code"\)/);
- assert.match(route,/query\.has\("state"\)/);
- assert.match(route,/status:503/);
- assert.match(route,/Cache-Control/);
+ assert.match(route,/equalState\(expected,received\)/);
+ assert.match(route,/await verifyEditor\(\)/);
+ assert.match(start,/randomBytes\(32\)/);
+ assert.match(start,/sameSite:"lax"/);
+ assert.match(start,/httpOnly:true/);
+ assert.match(start,/await verifyEditor\(\)/);
+ assert.match(oauth,/config_id/);
+ assert.match(oauth,/response_type","code"/);
+ assert.match(oauth,/instagram_content_publish/);
  assert.match(panel,/https:\/\/c-edi-palabras-que-despiertan\.vercel\.app\/api\/meta\/callback/);
- assert.match(panel,/No pulses todavía/);
+ assert.match(panel,/Autorizar Instagram con Meta/);
 });
 
 test("Las tres variables Meta se validan en el servidor sin exponer claves",()=>{
@@ -188,6 +196,6 @@ test("Las tres variables Meta se validan en el servidor sin exponer claves",()=>
  assert.match(check,/grant_type:"client_credentials"/);
  assert.match(check,/graph\.facebook\.com\/v26\.0\/oauth\/access_token/);
  assert.match(check,/automaticPublishingEnabled:false/);
- assert.match(panel,/await verifyMetaAppCredentials\(\)/);
+ assert.match(panel,/verifyMetaAppCredentials\(\)/);
  assert.doesNotMatch(panel,/(?:value|href)=\{process\.env\./);
 });
