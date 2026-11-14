@@ -251,3 +251,17 @@ test("La doble verificación Meta no presenta Facebook como pendiente cuando la 
  assert.doesNotMatch(panel,/El siguiente paso será integrar Facebook/);
  assert.match(panel,/el envío desde el Centro Editorial continúa desactivado/);
 });
+
+test("Simulacion de Meta solo consulta estados y nunca envia contenido",()=>{
+ const page=read("app/integraciones/simulacion/page.tsx");
+ const main=read("app/integraciones/page.tsx");
+ assert.match(page,/await requireEditor\(\)/);
+ assert.match(page,/metaVaultStatus\(\)/);
+ assert.match(page,/verifyMetaAppCredentials\(\)/);
+ assert.match(page,/facebookCanCreateContent/);
+ assert.match(page,/instagram_content_publish/);
+ assert.match(page,/expiresAt\*1000>Date\.now\(\)/);
+ assert.match(page,/No se enviará ningún contenido sin tu aprobación/);
+ assert.match(main,/href="\/integraciones\/simulacion"/);
+ assert.doesNotMatch(page,/method:\s*["']POST|fetch\(|\/feed\b|\/media_publish\b|access_token|META_APP_SECRET/);
+});

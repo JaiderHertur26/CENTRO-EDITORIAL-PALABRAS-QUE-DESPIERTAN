@@ -119,6 +119,7 @@ export default async function Integraciones({searchParams}:{searchParams:Promise
   </section>
   <div className="meta-connect-warning"><ShieldCheck size={19}/>
    <p><strong>Regla de seguridad:</strong> este panel no modifica los calendarios existentes, no crea publicaciones en redes y no presume que una fecha editorial equivale a una publicación confirmada en Meta. Facebook e Instagram continuarán gestionándose como hasta ahora hasta finalizar la conexión.</p></div>
+  {confirmed&&facebookCanPost&&<section className="section-card meta-connect-section"><div className="section-card-header"><div><p className="kicker">SIGUIENTE ETAPA · SIN ENVÍO REAL</p><h2>Simulación técnica de publicación</h2><p>Comprueba permisos, identidades, roles y vigencia de ambos canales. No publica contenido ni modifica la agenda.</p></div></div><div className="meta-connect-redirect"><p><Link href="/integraciones/simulacion" className="gold-button">Ejecutar simulación segura</Link></p></div></section>}
   <p className="meta-connect-links"><Link href="/calendario"><CalendarClock size={15}/> Ver el calendario actual</Link>
    <Link href="/enlaces"><Cable size={15}/> Consultar enlaces para redes</Link></p>
  </Shell>;
