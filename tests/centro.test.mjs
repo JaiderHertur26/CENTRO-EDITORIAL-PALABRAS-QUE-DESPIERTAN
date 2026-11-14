@@ -265,3 +265,43 @@ test("Simulacion de Meta solo consulta estados y nunca envia contenido",()=>{
  assert.match(main,/href="\/integraciones\/simulacion"/);
  assert.doesNotMatch(page,/method:\s*["']POST|fetch\(|\/feed\b|\/media_publish\b|access_token|META_APP_SECRET/);
 });
+
+test("Editor privado de Facebook, Instagram, feeds e historias funciona sin publicar",()=>{
+ const page=read("app/publicar/page.tsx");
+ const editor=read("components/MetaComposer.tsx");
+ const nav=read("components/Shell.tsx");
+ assert.match(page,/await requireEditor\(\)/);
+ assert.match(nav,/href:"\/publicar"/);
+ for(const scope of ["facebook_feed","instagram_feed","facebook_story","instagram_story"])
+  assert.match(editor,new RegExp(scope));
+ assert.match(editor,/Guardar borrador privado/);
+ assert.match(editor,/TEST-001/);
+ assert.match(editor,/instagramAccountType==="BUSINESS"/);
+ assert.match(editor,/Las fechas son objetivos editoriales/);
+ assert.match(editor,/contentApproved:false/);
+ assert.match(editor,/X-PQD-Expected-Revision/);
+ assert.match(editor,/Sin enviar/);
+ assert.doesNotMatch(editor,/media_publish|fetch\(\s*["']https:\/\/graph\.facebook/);
+});
+test("Endpoints de borradores son privados, comprueban origen y no publican",()=>{
+ const center=read("app/api/meta/borradores/route.ts");
+ const media=read("app/api/meta/borradores/media/route.ts");
+ const bridge=read("lib/meta-drafts-bridge.ts");
+ assert.match(center,/await verifyEditor\(\)/);
+ assert.match(center,/origin!==req.nextUrl.origin/);
+ assert.match(media,/await verifyEditor\(\)/);
+ assert.match(media,/origin!==req.nextUrl.origin/);
+ assert.match(bridge,/X-PQD-Meta-Bridge/);
+ assert.match(bridge,/getSession/);
+ assert.match(bridge,/Bearer /);
+ assert.match(bridge,/api\/editorial\/meta\/drafts/);
+ assert.doesNotMatch(center,/graph.facebook.com|media_publish/);
+ assert.doesNotMatch(media,/graph.facebook.com|media_publish/);
+});
+
+test("La sesión editorial se renueva en publicar e integraciones",()=>{
+ const middleware=read("proxy.ts");
+ assert.match(middleware,/\/publicar\/:path\*/);
+ assert.match(middleware,/\/integraciones\/:path\*/);
+ assert.match(middleware,/client\.auth\.getUser\(\)/);
+});

@@ -43,7 +43,7 @@ async function vaultRequest(method:"GET"|"POST",body?:unknown){
  if(!response.ok)throw Error("Meta Vault unavailable");
  return response.json() as Promise<Record<string,unknown>>;
 }
-export type MetaVaultStatus={ready:boolean;connected:boolean;scopes:string[];at:string|null;verifiedAccount:boolean;username?:string|null;expiresAt?:number|null;verificationState?:string;lastVerifiedAt?:string|null;facebookPageVerified?:boolean;facebookPageId?:string|null;facebookPageName?:string|null;facebookCanCreateContent?:boolean;facebookVerificationState?:string;lastFacebookVerifiedAt?:string|null;unavailable?:boolean};
+export type MetaVaultStatus={ready:boolean;connected:boolean;scopes:string[];at:string|null;verifiedAccount:boolean;username?:string|null;instagramAccountType?:string|null;expiresAt?:number|null;verificationState?:string;lastVerifiedAt?:string|null;facebookPageVerified?:boolean;facebookPageId?:string|null;facebookPageName?:string|null;facebookCanCreateContent?:boolean;facebookVerificationState?:string;lastFacebookVerifiedAt?:string|null;unavailable?:boolean};
 export async function metaVaultStatus():Promise<MetaVaultStatus>{
  try{
   if(!metaOauthReady())return {ready:false,connected:false,scopes:[],at:null,verifiedAccount:false};
@@ -55,6 +55,7 @@ export async function metaVaultStatus():Promise<MetaVaultStatus>{
    at:typeof status.at==="string"?status.at:null,
    verifiedAccount:status.verifiedAccount===true,
    username:typeof status.username==="string"?status.username:null,
+   instagramAccountType:typeof status.instagramAccountType==="string"?status.instagramAccountType:null,
    verificationState:typeof status.verificationState==="string"?status.verificationState:"unverified",
    expiresAt:typeof status.expiresAt==="number"?status.expiresAt:null,
    lastVerifiedAt:typeof status.lastVerifiedAt==="string"?status.lastVerifiedAt:null,

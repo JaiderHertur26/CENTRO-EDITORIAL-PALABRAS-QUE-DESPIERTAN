@@ -17,4 +17,4 @@ export async function proxy(request:NextRequest){
  response.headers.set("Cache-Control","private, no-store");
  return response;
 }
-export const config={matcher:["/","/publicaciones/:path*","/comunidad/:path*","/calendario/:path*","/auditoria/:path*","/api/:path*","/acceso"]};
+export const config={matcher:["/","/publicaciones/:path*","/comunidad/:path*","/calendario/:path*","/auditoria/:path*","/api/:path*","/integraciones/:path*","/publicar/:path*","/acceso"]};

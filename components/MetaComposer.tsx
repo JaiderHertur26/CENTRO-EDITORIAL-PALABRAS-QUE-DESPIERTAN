@@ -1,0 +1,293 @@
+"use client";
+import {useEffect,useState} from "react";
+import {Facebook,Instagram,Image as ImageIcon,CalendarDays,Save,Plus,ShieldCheck,LockKeyhole,CheckCircle2,AlertCircle,FileImage,Clock3} from "lucide-react";
+
+type ChannelName="facebook_feed"|"instagram_feed"|"facebook_story"|"instagram_story";
+type Slot="feed"|"story";
+type Channel={enabled:boolean;copy:string;mode:"manual"|"target";scheduledAt:string|null};
+type MediaInfo={slot:Slot;mime:string;width:number;height:number;size:number;sha256:string;uploadedAt:string};
+type Draft={
+ version:1;id:string;title:string;reference:string;createdAt:string;updatedAt:string;
+ contentApproved:boolean;approvalAt:string|null;
+ channels:Record<ChannelName,Channel>;
+ media:{feed:MediaInfo|null;story:MediaInfo|null};
+};
+type ResponseDraft={draft?:Draft;drafts?:Draft[];error?:string;ok?:boolean;limited?:boolean};
+const channels:{key:ChannelName;label:string;platform:"fb"|"ig";slot:Slot;hint:string}[]=[
+ {key:"facebook_feed",label:"Publicación de Facebook",platform:"fb",slot:"feed",hint:"Texto y fotografía en la fanpage"},
+ {key:"instagram_feed",label:"Publicación de Instagram",platform:"ig",slot:"feed",hint:"Fotografía y leyenda del perfil"},
+ {key:"facebook_story",label:"Historia de Facebook",platform:"fb",slot:"story",hint:"Imagen vertical 9:16; enlaces interactivos no asegurados por API"},
+ {key:"instagram_story",label:"Historia de Instagram",platform:"ig",slot:"story",hint:"Solo cuentas Business; texto sobrepuesto debe formar parte de la imagen"}
+];
+const fbApproved=`Palabras que despiertan es un espacio para mirar la vida a la luz de la fe.
+
+Aquí la Sagrada Escritura dialoga con nuestras preguntas, experiencias y esperanzas. Compartimos reflexiones y artículos que invitan a detenernos, pensar y vivir con mayor profundidad.
+
+Conoce la revista y sus publicaciones:
+https://www.palabrasquedespiertan.online
+
+P. Jaider Herrera Turizo
+
+#PalabrasQueDespiertan #FeYVida #ReflexiónCatólica`;
+const igApproved=`Palabras que despiertan. ✨
+
+Un espacio para mirar la vida a la luz de la fe.
+
+La Sagrada Escritura, las preguntas de cada día y la esperanza se encuentran en reflexiones y artículos que invitan a detenernos y volver a lo esencial.
+
+Encuentra la revista en el enlace de nuestro perfil:
+www.palabrasquedespiertan.online
+
+P. Jaider Herrera Turizo
+
+#PalabrasQueDespiertan #FeYVida #ReflexiónCatólica #Esperanza`;
+
+function fresh():Draft{
+ const date=new Date().toISOString();
+ const make=(enabled:boolean,copy=""):Channel=>({enabled,copy,mode:"manual",scheduledAt:null});
+ return {id:crypto.randomUUID(),version:1,title:"",reference:"",
+  createdAt:date,updatedAt:"",contentApproved:false,approvalAt:null,
+  channels:{
+   facebook_feed:make(true),instagram_feed:make(true),
+   facebook_story:make(false),instagram_story:make(false)
+  },media:{feed:null,story:null}};
+}
+const toCO=(iso:string|null)=>{
+ if(!iso)return "";
+ const formatter=new Intl.DateTimeFormat("sv-SE",{timeZone:"America/Bogota",year:"numeric",month:"2-digit",day:"2-digit",hour:"2-digit",minute:"2-digit",hour12:false});
+ return formatter.format(new Date(iso)).replace(" ","T");
+};
+const fromCO=(input:string)=>input?new Date(input+":00-05:00").toISOString():null;
+const dateCO=(iso:string|null)=>iso?new Intl.DateTimeFormat("es-CO",{timeZone:"America/Bogota",dateStyle:"medium",timeStyle:"short"}).format(new Date(iso)):"Sin fecha objetivo";
+const imgUrl=(d:Draft,slot:Slot)=>d.media[slot]?"/api/meta/borradores/media?id="+encodeURIComponent(d.id)+"&slot="+slot+"&v="+encodeURIComponent(d.media[slot]!.sha256.slice(0,12)):"";
+const activeSlots=(d:Draft)=>new Set(channels.filter(c=>d.channels[c.key].enabled).map(c=>c.slot));
+
+export function MetaComposer({instagramAccountType}:{instagramAccountType:string|null}){
+ const [draft,setDraft]=useState<Draft|null>(null);
+ const [revision,setRevision]=useState<string|null>(null);
+ const [drafts,setDrafts]=useState<Draft[]>([]);
+ const [loading,setLoading]=useState(true);
+ const [busy,setBusy]=useState(false);
+ const [message,setMessage]=useState("");
+ const [error,setError]=useState("");
+ const [files,setFiles]=useState<{feed:File|null;story:File|null}>({feed:null,story:null});
+ const [preview,setPreview]=useState<{feed:string;story:string}>({feed:"",story:""});
+ useEffect(()=>{setDraft(fresh());void reload();},[]);
+ useEffect(()=>{
+  const feed=files.feed?URL.createObjectURL(files.feed):"";
+  const story=files.story?URL.createObjectURL(files.story):"";
+  setPreview({feed,story});
+  return ()=>{if(feed)URL.revokeObjectURL(feed);if(story)URL.revokeObjectURL(story)};
+ },[files]);
+ async function reload(){
+  try{
+   const res=await fetch("/api/meta/borradores",{cache:"no-store"});
+   const body=await res.json() as ResponseDraft;
+   if(!res.ok)throw Error(body.error||"Error al consultar");
+   setDrafts(body.drafts||[]);
+  }catch(e){setError(e instanceof Error?e.message:"No se pudieron cargar borradores privados")}
+  finally{setLoading(false)}
+ }
+ function openExisting(x:Draft){
+  setDraft(x);setRevision(x.updatedAt);setFiles({feed:null,story:null});setMessage("");setError("");
+ }
+ function newOne(){
+  setDraft(fresh());setRevision(null);setFiles({feed:null,story:null});setMessage("");setError("");
+ }
+ function loadTest(){
+  const exists=drafts.find(x=>x.reference==="TEST-001");
+  if(exists){openExisting(exists);return}
+  const d=fresh();
+  d.title="Presentación institucional — TEST-001";
+  d.reference="TEST-001";
+  d.channels.facebook_feed.copy=fbApproved;
+  d.channels.instagram_feed.copy=igApproved;
+  setDraft(d);setRevision(null);setFiles({feed:null,story:null});setMessage("Se cargaron los dos textos aprobados. Adjunta la imagen TEST-001 desde el paquete entregado y revisa la pieza antes de aprobarla.");setError("");
+ }
+ function change(update:(d:Draft)=>Draft,invalidatesApproval=false){
+  setDraft(old=>{
+   if(!old)return old;
+   const next=update(old);
+   return invalidatesApproval?{...next,contentApproved:false,approvalAt:null}:next;
+  });
+  setMessage("");
+ }
+ function changeChannel(key:ChannelName,patch:Partial<Channel>,invalidate=false){
+  change(d=>({...d,channels:{...d.channels,[key]:{...d.channels[key],...patch}}}),invalidate);
+ }
+ async function chooseFile(slot:Slot,file:File|null){
+  setError("");setMessage("");
+  if(!file){setFiles(old=>({...old,[slot]:null}));return}
+  if(!["image/jpeg","image/png"].includes(file.type)){setError("Selecciona una imagen JPG o PNG");return}
+  if(file.size>3_500_000){setError("La imagen no puede superar 3,5 MB");return}
+  try{
+   const bitmap=await createImageBitmap(file);
+   const w=bitmap.width,h=bitmap.height;bitmap.close();
+   if(w<320||h<320||w>4096||h>4096||w*h>16_000_000)throw Error("Dimensiones no admitidas");
+   if(slot==="story"&&(w<720||h<1280||Math.abs(w/h-9/16)>0.025))throw Error("Las historias requieren imagen vertical 9:16 (ideal 1080 × 1920). No se recortará la imagen original.");
+   if(slot==="feed"&&(w/h<0.8||w/h>1.91))throw Error("El feed requiere una relación de imagen entre 4:5 y 1,91:1");
+   setFiles(old=>({...old,[slot]:file}));
+   change(d=>({...d,contentApproved:false,approvalAt:null}));
+  }catch(e){setError(e instanceof Error?e.message:"No se pudo leer la imagen")}
+ }
+ async function save(){
+  if(!draft||busy)return;
+  setError("");setMessage("");
+  if(draft.title.trim().length<3){setError("Escribe un título descriptivo");return}
+  if(!channels.some(c=>draft.channels[c.key].enabled)){setError("Selecciona al menos un destino");return}
+  for(const c of channels){
+   const item=draft.channels[c.key];
+   if(item.enabled&&c.slot==="feed"&&!item.copy.trim()){setError("Falta texto para "+c.label);return}
+   if(item.mode==="target"&&!item.scheduledAt){setError("Falta la fecha objetivo de "+c.label);return}
+  }
+  setBusy(true);
+  try{
+   const response=await fetch("/api/meta/borradores",{
+    method:"POST",headers:{"Content-Type":"application/json"},
+    body:JSON.stringify({draft,expectedUpdatedAt:revision})
+   });
+   const body=await response.json() as ResponseDraft;
+   if(!response.ok||!body.draft)throw Error(body.error||"Error al guardar");
+   let current=body.draft;
+   setDraft(current);setRevision(current.updatedAt);
+   for(const slot of ["feed","story"] as const){
+    const file=files[slot];
+    if(!file)continue;
+    const url="/api/meta/borradores/media?id="+encodeURIComponent(current.id)+"&slot="+slot;
+    const res=await fetch(url,{method:"PUT",headers:{"Content-Type":file.type,"X-PQD-Expected-Revision":current.updatedAt},body:file});
+    const result=await res.json() as ResponseDraft;
+    if(!res.ok||!result.draft)throw Error((result.error||"No se guardó la imagen")+" ("+slot+"). Los demás cambios sí se guardaron.");
+    current=result.draft;setDraft(current);setRevision(current.updatedAt);
+    setFiles(old=>({...old,[slot]:null}));
+   }
+   setMessage("Borrador guardado de forma privada. No se ha publicado ni programado en Meta.");
+   await reload();
+  }catch(e){setError(e instanceof Error?e.message:"Error al guardar el borrador")}
+  finally{setBusy(false)}
+ }
+ function exportDraft(){
+  if(!draft)return;
+  const withoutMedia={...draft,media:{feed:draft.media.feed?{...draft.media.feed}:null,story:draft.media.story?{...draft.media.story}:null}};
+  const blob=new Blob([JSON.stringify(withoutMedia,null,2)],{type:"application/json"});
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement("a");a.href=url;a.download=(draft.reference||"borrador")+"-meta.json";a.click();
+  URL.revokeObjectURL(url);
+ }
+ if(!draft)return <p>Preparando editor de redes…</p>;
+ const active=activeSlots(draft);
+ const imagesReady=[...active].every(slot=>!!draft.media[slot]&&!files[slot]);
+ return <div className="meta-publisher">
+  <section className="meta-publisher-alert"><ShieldCheck size={20}/><div>
+   <strong>Modo preparación · sin envío real</strong>
+   <p>Guardar un borrador o indicar una fecha no crea publicaciones ni historias en Meta. Las fechas son objetivos editoriales; la programación real todavía está desactivada.</p>
+  </div></section>
+  <div className="meta-publisher-actions">
+   <button type="button" onClick={newOne}><Plus size={16}/> Nuevo borrador</button>
+   <button type="button" onClick={loadTest}><FileImage size={16}/> Cargar TEST-001 aprobado</button>
+   <button type="button" onClick={exportDraft}>Exportar ficha JSON</button>
+  </div>
+  <div className="meta-publisher-layout">
+   <div className="meta-publisher-main">
+    <section className="section-card">
+     <div className="section-card-header"><div><p className="kicker">IDENTIDAD DE LA PIEZA</p><h2>Datos del borrador</h2></div><span className="meta-publisher-status"><LockKeyhole size={14}/> Privado</span></div>
+     <div className="meta-publisher-pad">
+      <label>Nombre interno<input value={draft.title} onChange={e=>change(d=>({...d,title:e.target.value}),true)} placeholder="Ej. Testimonio de esperanza · serie 03" maxLength={120}/></label>
+      <label>Código o referencia (opcional)<input value={draft.reference} onChange={e=>change(d=>({...d,reference:e.target.value}),true)} placeholder="TEST-001, PD-014, ART-013…" maxLength={60}/></label>
+      <p className="meta-publisher-help">Una referencia no publica ni modifica el contenido original de la revista. TEST-001 se mantiene independiente.</p>
+     </div>
+    </section>
+    <section className="section-card">
+     <div className="section-card-header"><div><p className="kicker">MATERIAL GRÁFICO</p><h2>Imágenes privadas</h2><p>Dos formatos separados, sin alterar los originales. JPEG o PNG, máximo 3,5 MB por imagen.</p></div></div>
+     <div className="meta-publisher-pad meta-publisher-filegrid">
+      {(["feed","story"] as const).map(slot=><div key={slot} className="meta-publisher-file">
+       <div className="meta-publisher-file-preview">
+        {(preview[slot]||imgUrl(draft,slot))?<img src={preview[slot]||imgUrl(draft,slot)} alt={"Vista previa del material "+slot}/>:<ImageIcon size={34}/>}
+       </div>
+       <strong>{slot==="feed"?"Feed · formato 1:1 o 4:5":"Historias · vertical 9:16"}</strong>
+       <p>{slot==="feed"?"Imagen principal de Facebook e Instagram":"Imagen vertical propia; se recomienda 1080 × 1920"}</p>
+       <input type="file" accept="image/jpeg,image/png" onChange={e=>void chooseFile(slot,e.target.files?.[0]||null)} aria-label={"Seleccionar imagen para "+slot}/>
+       {files[slot]&&<small>Sin guardar: {files[slot]!.name}</small>}
+       {draft.media[slot]&&!files[slot]&&<small>Guardado: {draft.media[slot]!.width} × {draft.media[slot]!.height}</small>}
+      </div>)}
+     </div>
+    </section>
+    <section className="section-card">
+     <div className="section-card-header"><div><p className="kicker">SELECCIÓN INDEPENDIENTE</p><h2>Destinos de publicación</h2><p>Configura textos y fechas diferentes. Por ahora las fechas no activan un envío automático.</p></div></div>
+     <div className="meta-publisher-channels">
+      {channels.map(c=>{
+       const current=draft.channels[c.key],isStory=c.slot==="story";
+       return <article className={"meta-publisher-channel "+(current.enabled?"enabled":"")} key={c.key}>
+        <label className="meta-publisher-toggle"><input type="checkbox" checked={current.enabled} onChange={e=>changeChannel(c.key,{enabled:e.target.checked},true)}/>
+         {c.platform==="fb"?<Facebook size={21}/>:<Instagram size={21}/>}
+         <strong>{c.label}</strong><span>{current.enabled?"Preparar":"Omitir"}</span></label>
+        {current.enabled&&<>
+         <p className="meta-publisher-help">{c.hint}</p>
+         <label>{isStory?"Texto de referencia para la historia (no se sobreimprime por API)":"Texto que acompañará la publicación"}
+          <textarea rows={isStory?3:6} value={current.copy} maxLength={2200} placeholder={isStory?"Notas o texto que debe estar incorporado en la imagen…":"Escribe la descripción aprobada…"} onChange={e=>changeChannel(c.key,{copy:e.target.value},true)}/></label>
+         <div className="meta-publisher-schedule">
+          <label><Clock3 size={15}/> Modo
+           <select value={current.mode} onChange={e=>changeChannel(c.key,{mode:e.target.value as Channel["mode"],scheduledAt:null})}>
+            <option value="manual">Sin fecha (manual)</option>
+            <option value="target">Fecha objetivo</option>
+           </select></label>
+          {current.mode==="target"&&<label><CalendarDays size={15}/> Hora Colombia (UTC−5)
+           <input type="datetime-local" value={toCO(current.scheduledAt)} onChange={e=>{
+            try{changeChannel(c.key,{scheduledAt:fromCO(e.target.value)})}
+            catch{setError("Fecha objetivo inválida")}
+           }}/></label>}
+         </div>
+         {isStory&&<p className="meta-publisher-help">{c.platform==="ig"?(instagramAccountType==="BUSINESS"?"Cuenta Instagram Business confirmada para evaluar historias.":instagramAccountType?"Meta informa tipo "+instagramAccountType+"; las historias por API requieren Business.":"Tipo de cuenta Instagram aún sin comprobar: las historias por API solo funcionan con cuentas Business."):"La imagen debe llevar su propio texto. Enlaces interactivos y stickers no están garantizados por la API."} La música y los stickers no se añadirán automáticamente.</p>}
+        </>}
+       </article>;
+      })}
+     </div>
+    </section>
+    <section className="section-card">
+     <div className="section-card-header"><div><p className="kicker">REVISIÓN AUTORAL</p><h2>Control de aprobación</h2></div></div>
+     <div className="meta-publisher-pad">
+      <label className="meta-publisher-approval"><input type="checkbox" checked={draft.contentApproved} disabled={!imagesReady||!revision||busy} onChange={e=>change(d=>({...d,contentApproved:e.target.checked}))}/>
+       <span><strong>Confirmar que he revisado y aprobado esta versión de textos e imágenes</strong><small>La aprobación de contenido no autoriza enviarlo a Meta. Si cambias un texto o una imagen, se requerirá aprobar nuevamente.</small></span></label>
+      {!imagesReady&&<p className="meta-publisher-help">Adjunta y guarda las imágenes de todos los formatos seleccionados para poder aprobar el contenido.</p>}
+      {draft.approvalAt&&<p className="meta-publisher-help">Aprobación registrada: {dateCO(draft.approvalAt)}.</p>}
+      <div className="meta-publisher-save">
+       <button disabled={busy} className="gold-button" onClick={()=>void save()}><Save size={16}/>{busy?"Guardando…":"Guardar borrador privado"}</button>
+       <span>Publicación real desactivada <LockKeyhole size={14}/></span>
+      </div>
+      {message&&<p className="meta-publisher-success" role="status"><CheckCircle2 size={16}/>{message}</p>}
+      {error&&<p className="meta-publisher-error" role="alert"><AlertCircle size={16}/>{error}</p>}
+     </div>
+    </section>
+   </div>
+   <aside className="meta-publisher-side">
+    <section className="section-card">
+     <div className="section-card-header"><div><p className="kicker">VISTA PREVIA</p><h2>Cuatro destinos</h2></div></div>
+     <div className="meta-publisher-preview-grid">
+      {channels.map(c=>{
+       const slot=c.slot;
+       const src=preview[slot]||imgUrl(draft,slot);
+       const item=draft.channels[c.key];
+       return <div className={"meta-publisher-preview "+(slot==="story"?"story":"feed")} key={c.key}>
+        <strong>{c.platform==="fb"?"Facebook":"Instagram"} · {slot==="story"?"Historia":"Feed"}</strong>
+        <div className="meta-publisher-frame">{src?<img src={src} alt={"Vista previa de "+c.label}/>:<span><ImageIcon size={22}/> Sin imagen</span>}</div>
+        <p>{item.enabled?(item.copy||"Sin texto adicional").slice(0,130):"Destino no seleccionado"}</p>
+        {item.enabled&&item.mode==="target"&&<small>Objetivo: {dateCO(item.scheduledAt)}</small>}
+        {item.enabled&&item.mode==="manual"&&<small>Sin fecha objetivo</small>}
+        {!item.enabled&&<small>Omitido</small>}
+       </div>;
+      })}
+     </div>
+    </section>
+    <section className="section-card">
+     <div className="section-card-header"><div><p className="kicker">EXPEDIENTES GUARDADOS</p><h2>Borradores privados</h2></div></div>
+     <div className="meta-publisher-saved">
+      {loading?<p>Cargando borradores…</p>:drafts.length===0?<p>No hay borradores guardados todavía.</p>:
+       drafts.map(x=><button key={x.id} type="button" onClick={()=>openExisting(x)} className={draft.id===x.id?"selected":""}>
+        <strong>{x.title}</strong><small>{x.reference||"Sin código"} · {dateCO(x.updatedAt)}</small><small>{x.contentApproved?"Contenido aprobado":"Pendiente de aprobación"} · Sin enviar</small>
+       </button>)}
+      <p>Los borradores se almacenan de forma privada. No crean publicaciones ni modifican los calendarios de la revista.</p>
+     </div>
+    </section>
+   </aside>
+  </div>
+ </div>;
+}
