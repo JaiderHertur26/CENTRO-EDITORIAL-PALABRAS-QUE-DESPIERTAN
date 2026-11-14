@@ -16,6 +16,17 @@ export default async function Integraciones(){
    <p>Panel de preparación y seguridad para publicar desde el Centro Editorial en Facebook e Instagram. Ninguna publicación se enviará hasta autorizar las cuentas y superar una prueba de conexión.</p>
   </div>
   <section className="section-card meta-connect-section">
+   <div className="section-card-header"><div>
+     <p className="kicker">META · INICIO DE SESIÓN UNIFICADO</p>
+     <h2>URL de redireccionamiento</h2>
+     <p>Ruta estable reservada para registrar en Meta for Developers. La autorización de cuentas y el intercambio seguro de tokens aún no están habilitados.</p>
+   </div><span className="meta-connect-pending"><LockKeyhole size={15}/> Autorización pendiente</span></div>
+   <div className="meta-connect-redirect">
+     <code>https://c-edi-palabras-que-despiertan.vercel.app/api/meta/callback</code>
+     <p>En Meta: «API setup with Unified login» → «URL de redireccionamiento» → «Guardar». No pulses todavía «Generar tokens de acceso» ni «Publicar app».</p>
+   </div>
+  </section>
+  <section className="section-card meta-connect-section">
    <div className="section-card-header">
     <div><p className="kicker">ESTADO DE CONEXIÓN</p><h2>Facebook e Instagram</h2>
      <p>{state.reason}</p></div>

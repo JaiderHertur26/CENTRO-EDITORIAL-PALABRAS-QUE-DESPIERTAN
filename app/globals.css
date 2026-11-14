@@ -129,3 +129,9 @@
 .meta-connect-warning strong{color:var(--white)}
 @media(max-width:800px){.meta-connect-accounts>div,.meta-connect-steps>li{flex-wrap:wrap}.meta-connect-state{margin-left:auto}.meta-connect-accounts{padding:7px 18px}.meta-connect-steps{padding:5px 19px}.meta-connect-pending{white-space:normal}}
 @media(max-width:450px){.meta-connect-steps>li{gap:10px}.meta-connect-accounts>div{gap:12px}.meta-connect-links{gap:10px}}
+
+/* URI de retorno reservada: visible y copiable, sin sugerir OAuth operativo. */
+.meta-connect-redirect{padding:4px 28px 24px}
+.meta-connect-redirect code{display:block;padding:15px 17px;background:#130e09;color:#f6d49c;border:1px solid #70512d;border-radius:7px;overflow-wrap:anywhere;font-size:13px;line-height:1.65;user-select:all}
+.meta-connect-redirect p{font-size:12px;color:var(--muted);line-height:1.7;max-width:78ch}
+@media(max-width:650px){.meta-connect-redirect{padding:4px 16px 18px}}

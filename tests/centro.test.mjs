@@ -164,3 +164,16 @@ test("Integraciones Meta: el paso inicial es privado, no publica contenido y con
  assert.match(state,/permissionsVerified:false/);
  assert.doesNotMatch(page,/fetch\(|\.post\(|access_token|META_APP_SECRET/);
 });
+
+test("La URL de retorno de Meta está reservada pero OAuth y publicaciones siguen desactivados",()=>{
+ const route=read("app/api/meta/callback/route.ts");
+ const panel=read("app/integraciones/page.tsx");
+ assert.match(route,/oauthEnabled:false/);
+ assert.match(route,/publishingEnabled:false/);
+ assert.match(route,/query\.has\("code"\)/);
+ assert.match(route,/query\.has\("state"\)/);
+ assert.match(route,/status:503/);
+ assert.match(route,/Cache-Control/);
+ assert.match(panel,/https:\/\/c-edi-palabras-que-despiertan\.vercel\.app\/api\/meta\/callback/);
+ assert.match(panel,/No pulses todavía/);
+});
