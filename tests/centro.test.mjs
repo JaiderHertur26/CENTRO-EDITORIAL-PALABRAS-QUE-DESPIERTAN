@@ -249,8 +249,9 @@ test("Integraciones refleja los recibos reales de TEST-001 sin confundir feed, h
  assert.match(panel,/facebookTestPublished=testReceipts\?\.deliveries\?\.facebook_feed\?\.status==="published"/);
  assert.match(panel,/instagramTestPublished=testReceipts\?\.deliveries\?\.instagram_feed\?\.status==="published"/);
  assert.match(panel,/bothFeedsPublished=facebookTestPublished&&instagramTestPublished/);
- assert.match(panel,/facebookCanPost\?bothFeedsPublished\?/);
- assert.match(panel,/Ambos feeds publicados · historias pendientes/);
+ assert.match(panel,/facebookCanPost\?allTestPublished\?/);
+ assert.match(panel,/4 de 4 destinos publicados/);
+ assert.match(panel,/allTestPublished=bothFeedsPublished&&bothStoriesPublished/);
  assert.match(panel,/Publicación automática inactiva/);
  assert.doesNotMatch(panel,/El siguiente paso será integrar Facebook/);
 });
@@ -398,4 +399,17 @@ test("Confirmación Business independiente de aprobación y envío, con registro
  assert.match(ui,/INSTAGRAM_BUSINESS_OWNER_CONFIRMATION_REQUIRED/);
  assert.match(ui,/window.confirm/);
  assert.match(ui,/!!record\|\|checking/);
+});
+
+test("Integraciones registra cuatro destinos y no vuelve a informar historias pendientes tras publicar",()=>{
+ const panel=read("app/integraciones/page.tsx");
+ assert.match(panel,/facebookStoryPublished=testReceipts\?\.deliveries\?\.facebook_story\?\.status==="published"/);
+ assert.match(panel,/instagramStoryPublished=testReceipts\?\.deliveries\?\.instagram_story\?\.status==="published"/);
+ assert.match(panel,/allTestPublished=bothFeedsPublished&&bothStoriesPublished/);
+ assert.match(panel,/allTestPublished\?"4 de 4 confirmados"/);
+ assert.match(panel,/Instagram · Historia/);
+ assert.match(panel,/Facebook · Historia/);
+ assert.match(panel,/testReceipts\.deliveries\.instagram_story\.metaPostId/);
+ assert.match(panel,/Programación automática:\<\/strong\> desactivada/);
+ assert.doesNotMatch(panel,/No hay historias publicadas de TEST-001/);
 });

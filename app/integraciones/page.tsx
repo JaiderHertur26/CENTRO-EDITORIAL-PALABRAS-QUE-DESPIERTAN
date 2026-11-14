@@ -26,8 +26,14 @@ export default async function Integraciones({searchParams}:{searchParams:Promise
  const facebookTestPublished=testReceipts?.deliveries?.facebook_feed?.status==="published";
  const instagramTestPublished=testReceipts?.deliveries?.instagram_feed?.status==="published";
  const bothFeedsPublished=facebookTestPublished&&instagramTestPublished;
+ const facebookStoryPublished=testReceipts?.deliveries?.facebook_story?.status==="published";
+ const instagramStoryPublished=testReceipts?.deliveries?.instagram_story?.status==="published";
+ const bothStoriesPublished=facebookStoryPublished&&instagramStoryPublished;
+ const allTestPublished=bothFeedsPublished&&bothStoriesPublished;
  const facebookPostLink=safeSocialUrl(testReceipts?.deliveries?.facebook_feed?.permalink,"facebook.com");
  const instagramPostLink=safeSocialUrl(testReceipts?.deliveries?.instagram_feed?.permalink,"instagram.com");
+ const facebookStoryLink=safeSocialUrl(testReceipts?.deliveries?.facebook_story?.permalink,"facebook.com");
+ const instagramStoryLink=safeSocialUrl(testReceipts?.deliveries?.instagram_story?.permalink,"instagram.com");
  const hasAccess=authorization.connected&&authorization.scopes.includes("instagram_basic")&&authorization.scopes.includes("instagram_content_publish");
  const facebookScopes=["pages_show_list","pages_read_engagement","pages_manage_posts"] as const;
  const facebookGranted=authorization.connected&&facebookScopes.every(scope=>authorization.scopes.includes(scope));
@@ -70,7 +76,7 @@ export default async function Integraciones({searchParams}:{searchParams:Promise
      <p><strong>Variables de Meta:</strong> {state.configuredCount} de 3 registradas en este despliegue.</p>
      <p><strong>Identificadores oficiales:</strong> {state.idsMatch?"Coinciden con la aplicación y la configuración orgánica de Instagram":"Pendientes de corrección"}.</p>
      <p><strong>Credenciales de aplicación:</strong> {credentials==="verified"?"Validadas por Meta":credentials==="unavailable"?"No fue posible contactar Meta":credentials==="missing"?"Faltan variables":"No se pudieron validar"}.</p>
-     <p><strong>Permisos de publicación:</strong> {bothFeedsPublished?"Instagram y Facebook: TEST-001 publicado en ambos feeds; historias pendientes de validación.":hasAccess?facebookGranted?facebookVerified?"Instagram y Facebook: permisos concedidos y cuentas identificadas; consulta de envío o prueba pendiente.":"Instagram: concedidos; Facebook: tres permisos concedidos, falta verificar la página.":"Instagram: concedidos; Facebook: autorización de permisos pendiente.":"Instagram y Facebook: pendientes de autorización."}</p>
+     <p><strong>Permisos de publicación:</strong> {allTestPublished?"Instagram y Facebook: TEST-001 confirmado en ambos feeds y ambas historias.":bothFeedsPublished?"Instagram y Facebook: TEST-001 publicado en ambos feeds; historias en comprobación.":hasAccess?facebookGranted?facebookVerified?"Instagram y Facebook: permisos concedidos y cuentas identificadas; consulta de envío o prueba pendiente.":"Instagram: concedidos; Facebook: tres permisos concedidos, falta verificar la página.":"Instagram: concedidos; Facebook: autorización de permisos pendiente.":"Instagram y Facebook: pendientes de autorización."}</p>
    </div>
   </section>
   <section className="section-card meta-connect-section">
@@ -89,7 +95,7 @@ export default async function Integraciones({searchParams}:{searchParams:Promise
      {hasAccess&&!facebookGranted&&<p><strong>Permisos de Facebook por incorporar al token:</strong> {facebookMissing.join(" · ")}. Ya se añadieron a la configuración de Meta, pero necesitas renovar el consentimiento para concederlos.</p>}
      {facebookGranted&&<p><strong>Facebook:</strong> {facebookDescription}{facebookVerified&&authorization.facebookPageId&&" Identificador verificado: "+authorization.facebookPageId+"."}</p>}
      {authorization.connected&&authorization.expiresAt&&authorization.expiresAt>0&&<p><strong>Vencimiento registrado:</strong> {new Intl.DateTimeFormat("es-CO",{timeZone:"America/Bogota",dateStyle:"long"}).format(new Date(authorization.expiresAt*1000))}.</p>}
-     {confirmed&&<p><strong>Cuenta confirmada:</strong> @{authorization.username}. {facebookCanPost?bothFeedsPublished?"Los dos feeds de TEST-001 están publicados y confirmados en Meta. Las historias y la programación automática requieren validación propia.":"Facebook también está identificado y autorizado para crear contenido. El siguiente paso es comprobar el resultado real de cada canal en el registro privado.":facebookVerified?"La fanpage está identificada; faltan comprobar todas sus capacidades de publicación.":"La identidad y capacidad de la fanpage todavía deben comprobarse."}</p>}
+     {confirmed&&<p><strong>Cuenta confirmada:</strong> @{authorization.username}. {facebookCanPost?allTestPublished?"Los cuatro destinos de TEST-001 están publicados y confirmados por Meta. La programación automática requiere una activación y conciliación independientes.":bothFeedsPublished?"Los dos feeds de TEST-001 están publicados y confirmados en Meta. Las historias se comprueban por separado.":"Facebook también está identificado y autorizado para crear contenido. El siguiente paso es comprobar el resultado real de cada canal en el registro privado.":facebookVerified?"La fanpage está identificada; faltan comprobar todas sus capacidades de publicación.":"La identidad y capacidad de la fanpage todavía deben comprobarse."}</p>}
      {authorization.ready&&credentials==="verified"&&(!authorization.connected||expired||(hasAccess&&!facebookGranted))&&<form method="POST" action="/api/meta/connect">
        <button type="submit" className="gold-button">{expired?"Renovar autorización de Meta":hasAccess?"Actualizar permisos de Instagram y Facebook":"Autorizar Instagram con Meta"}</button>
      </form>}
@@ -106,25 +112,26 @@ export default async function Integraciones({searchParams}:{searchParams:Promise
     <div><Facebook size={24}/><div><strong>Facebook · Fanpage</strong>
       <a href="https://www.facebook.com/PalabrasQueDespiertan01" target="_blank" rel="noopener noreferrer">@{state.facebookPage} <ExternalLink size={13}/></a>
       <small>{facebookDescription}</small></div>
-     <span className="meta-connect-state"><AlertCircle size={15}/> {facebookTestPublished?"Feed de prueba publicado":facebookVerified?facebookCanPost?"Página identificada · prueba pendiente":"Página identificada · rol pendiente":facebookGranted?"Permisos recibidos · página por verificar":"Permisos pendientes"}</span></div>
+     <span className="meta-connect-state"><AlertCircle size={15}/> {facebookStoryPublished&&facebookTestPublished?"Feed e historia de prueba publicados":facebookTestPublished?"Feed de prueba publicado":facebookVerified?facebookCanPost?"Página identificada · prueba pendiente":"Página identificada · rol pendiente":facebookGranted?"Permisos recibidos · página por verificar":"Permisos pendientes"}</span></div>
     <div><Instagram size={24}/><div><strong>Instagram · Perfil oficial</strong>
       <a href="https://www.instagram.com/palabrasquedespiertan/" target="_blank" rel="noopener noreferrer">@{state.instagramAccount} <ExternalLink size={13}/></a>
       <small>{accessDescription}</small></div>
-     <span className="meta-connect-state">{confirmed?<CheckCircle2 size={15}/>:<AlertCircle size={15}/>} {instagramTestPublished?"Feed de prueba publicado":confirmed?"Identidad verificada":hasAccess?"Autorizada · verificación pendiente":"Sin autorización"}</span></div>
+     <span className="meta-connect-state">{confirmed?<CheckCircle2 size={15}/>:<AlertCircle size={15}/>} {instagramStoryPublished&&instagramTestPublished?"Feed e historia de prueba publicados":instagramTestPublished?"Feed de prueba publicado":confirmed?"Identidad verificada":hasAccess?"Autorizada · verificación pendiente":"Sin autorización"}</span></div>
    </div>
   </section>
   {bothFeedsPublished&&<section className="section-card meta-connect-section">
    <div className="section-card-header"><div>
     <p className="kicker">PRUEBA REAL COMPLETADA · META</p>
-    <h2>TEST-001 publicado en las dos redes</h2>
+    <h2>{allTestPublished?"TEST-001: cuatro destinos publicados":"TEST-001 publicado en las dos redes"}</h2>
     <p>Resultado del registro privado del servidor, no de una simulación.</p>
-   </div><span className="meta-connect-state"><CheckCircle2 size={15}/> Feeds confirmados</span></div>
+   </div><span className="meta-connect-state"><CheckCircle2 size={15}/> {allTestPublished?"4 de 4 confirmados":"Feeds confirmados"}</span></div>
    <div className="meta-connect-redirect">
     {facebookPostLink&&<p><strong>Facebook:</strong> <a href={facebookPostLink} target="_blank" rel="noopener noreferrer">Ver publicación confirmada <ExternalLink size={13}/></a></p>}
     {instagramPostLink&&<p><strong>Instagram:</strong> <a href={instagramPostLink} target="_blank" rel="noopener noreferrer">Ver publicación confirmada <ExternalLink size={13}/></a></p>}
-    <p><strong>Historias:</strong> preparadas para aprobación y verificación independientes. No hay historias publicadas de TEST-001.</p>
+    <p><strong>Facebook · Historia:</strong> {facebookStoryPublished?"Publicada y confirmada por Meta.":"Pendiente de comprobación."} {facebookStoryPublished&&testReceipts?.deliveries?.facebook_story?.metaPostId&&"ID: "+testReceipts.deliveries.facebook_story.metaPostId} {facebookStoryLink&&<a href={facebookStoryLink} target="_blank" rel="noopener noreferrer">Ver historia <ExternalLink size={13}/></a>}</p>
+    <p><strong>Instagram · Historia:</strong> {instagramStoryPublished?"Publicada y confirmada por Meta.":"Pendiente de comprobación."} {instagramStoryPublished&&testReceipts?.deliveries?.instagram_story?.metaPostId&&"ID: "+testReceipts.deliveries.instagram_story.metaPostId} {instagramStoryLink&&<a href={instagramStoryLink} target="_blank" rel="noopener noreferrer">Ver historia <ExternalLink size={13}/></a>}</p>
     <p><strong>Programación automática:</strong> desactivada para prevenir duplicaciones con Meta Business Suite.</p>
-    <p><Link href="/publicar" className="gold-button">Revisar historias y permisos</Link></p>
+    <p><Link href="/publicar?test=1" className="gold-button">{allTestPublished?"Ver los cuatro recibos de TEST-001":"Revisar historias y permisos"}</Link></p>
    </div>
   </section>}
   <section className="section-card meta-connect-section">
@@ -142,10 +149,10 @@ export default async function Integraciones({searchParams}:{searchParams:Promise
      <span className="meta-connect-state">{credentials==="verified"?"Credenciales verificadas":"Validación pendiente"}</span></li>
     <li><span>03</span><div><strong>Autorizar y verificar Instagram y Facebook</strong>
      <p>{hasAccess?"Consentimiento de Instagram recibido y cifrado. "+(confirmed?"Su identidad ha sido confirmada.":"Falta confirmar su identidad mediante Meta.")+" "+(facebookVerified?facebookTestPublished?"La fanpage oficial está identificada y TEST-001 Feed ya está publicado.":"La fanpage oficial también quedó identificada. Falta la prueba de publicación.":facebookGranted?"Los permisos de Facebook ya fueron concedidos; su identidad está por verificar.":"Facebook todavía no concedió todos sus permisos."):"Pendiente del consentimiento de Instagram y Facebook."}</p></div>
-     <span className="meta-connect-state">{bothFeedsPublished?"Ambos feeds publicados · historias pendientes":confirmed?facebookVerified?"Ambas cuentas identificadas · prueba pendiente":facebookGranted?"Instagram verificada · página pendiente":"Instagram verificada · Facebook pendiente":hasAccess?facebookGranted?"Permisos de ambas redes · cuentas por verificar":"Instagram autorizada · permisos de Facebook pendientes":"Pendiente"}</span></li>
+     <span className="meta-connect-state">{allTestPublished?"4 de 4 destinos publicados":bothFeedsPublished?"Ambos feeds publicados · historias por comprobar":confirmed?facebookVerified?"Ambas cuentas identificadas · prueba pendiente":facebookGranted?"Instagram verificada · página pendiente":"Instagram verificada · Facebook pendiente":hasAccess?facebookGranted?"Permisos de ambas redes · cuentas por verificar":"Instagram autorizada · permisos de Facebook pendientes":"Pendiente"}</span></li>
     <li><span>04</span><div><strong>Prueba controlada y calendario</strong>
-     <p>{bothFeedsPublished?"TEST-001 se publicó realmente en Facebook e Instagram con identificadores oficiales y protección contra duplicados. Ahora corresponde aprobar y probar las historias y después activar la programación automática con conciliación de las publicaciones ya programadas.":"Antes de habilitar envíos adicionales: verificar ambas identidades y roles, aprobar una prueba de publicación, comprobar su identificador real y evitar duplicaciones con las publicaciones programadas."}</p></div>
-     <span className="meta-connect-state">{bothFeedsPublished?"Feed completado · historias pendientes":facebookCanPost&&confirmed?"Preparada · aprobación de prueba pendiente":"Pendiente"}</span></li>
+     <p>{allTestPublished?"TEST-001 publicó los cuatro destinos con identificadores oficiales y bloqueo de duplicados. La siguiente etapa independiente es conciliar la programación ya existente antes de habilitar automatizaciones.":bothFeedsPublished?"Los feeds de TEST-001 están confirmados. Las historias deben verificarse de forma independiente antes de programar contenidos adicionales.":"Antes de habilitar envíos adicionales: verificar ambas identidades y roles, aprobar una prueba de publicación, comprobar su identificador real y evitar duplicaciones con las publicaciones programadas."}</p></div>
+     <span className="meta-connect-state">{allTestPublished?"Prueba 4/4 completada · programación pendiente":bothFeedsPublished?"Feeds completados · historias por comprobar":facebookCanPost&&confirmed?"Preparada · aprobación de prueba pendiente":"Pendiente"}</span></li>
    </ol>
   </section>
   <div className="meta-connect-warning"><ShieldCheck size={19}/>
