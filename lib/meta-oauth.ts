@@ -82,7 +82,10 @@ export async function exchangeMetaCode(code:string){
  const data=rawDebug.data;
  if(!data?.is_valid||String(data.app_id)!==process.env.META_APP_ID)throw Error("Meta token not issued to this application");
  const scopes=data.scopes||[];
- if(!scopes.includes("instagram_basic")||!scopes.includes("instagram_content_publish"))throw Error("Meta publishing permissions missing");
+ // Una autorización nueva debe incluir todas las capacidades seleccionadas.
+ // Si Meta omite alguna, se conserva intacto el token previamente cifrado.
+ const required=["instagram_basic","instagram_content_publish","pages_show_list","pages_read_engagement","pages_manage_posts"];
+ if(required.some(scope=>!scopes.includes(scope)))throw Error("Meta authorization missing configured organic permissions");
  await vaultRequest("POST",{
   token,appId:process.env.META_APP_ID,scopes,
   expiresAt:Number.isFinite(data.expires_at)?data.expires_at:null,

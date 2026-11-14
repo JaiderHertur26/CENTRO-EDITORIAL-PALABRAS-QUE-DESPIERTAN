@@ -206,11 +206,28 @@ test("Integraciones Meta refleja la autorización real y separa permisos de iden
  assert.match(page,/authorization\.connected/);
  assert.match(page,/authorization\.verifiedAccount/);
  assert.match(page,/authorization\.username==="palabrasquedespiertan"/);
- assert.match(page,/hasAccess\?"Instagram: acceso básico y publicación orgánica concedidos/);
+ assert.match(page,/hasAccess\?facebookGranted\?"Instagram: concedidos; Facebook: tres permisos concedidos/);
  assert.match(page,/Facebook: pendiente/);
  assert.match(page,/Publicación automática inactiva/);
  assert.match(page,/Meta no respondió a la verificación de identidad/);
  assert.match(oauth,/X-PQD-Meta-App-Authorization/);
  assert.match(oauth,/verifiedAccount:status\.verifiedAccount===true/);
  assert.doesNotMatch(page,/access_token|META_APP_SECRET|SUPABASE_SECRET_KEY/);
+});
+
+test("Actualización de permisos Meta sin reemplazar un token válido por una autorización incompleta",()=>{
+ const panel=read("app/integraciones/page.tsx");
+ const oauth=read("lib/meta-oauth.ts");
+ assert.match(panel,/Actualizar permisos de Instagram y Facebook/);
+ assert.match(panel,/hasAccess&&!facebookGranted/);
+ assert.match(panel,/facebookMissing\.join/);
+ assert.match(panel,/facebookScopes\.every/);
+ assert.match(panel,/página por verificar/);
+ assert.match(oauth,/pages_show_list/);
+ assert.match(oauth,/pages_read_engagement/);
+ assert.match(oauth,/pages_manage_posts/);
+ assert.match(oauth,/if\(required\.some\(scope=>!scopes\.includes\(scope\)\)\)throw/);
+ const validate=oauth.indexOf("if(required.some(");
+ const save=oauth.indexOf('await vaultRequest("POST"');
+ assert.ok(validate>0&&save>validate,"No guardar token nuevo si faltan permisos");
 });
