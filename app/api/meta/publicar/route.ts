@@ -10,6 +10,7 @@ export async function GET(req:NextRequest){
  if(!/^[0-9a-f-]{36}$/i.test(id))return reply({error:"ID inválido"},400);
  const args=new URLSearchParams({id});
  if(req.nextUrl.searchParams.get("preflight")==="1")args.set("preflight","1");
+ if(req.nextUrl.searchParams.get("scheduled")==="1")args.set("scheduled","1");
  try{
   const upstream=await metaPublishBridge("GET",args);
   return reply(await upstream.json(),upstream.status);

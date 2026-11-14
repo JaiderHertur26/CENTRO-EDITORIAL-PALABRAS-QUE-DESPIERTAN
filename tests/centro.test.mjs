@@ -413,3 +413,20 @@ test("Integraciones registra cuatro destinos y no vuelve a informar historias pe
  assert.match(panel,/Programación automática:\<\/strong\> desactivada/);
  assert.doesNotMatch(panel,/No hay historias publicadas de TEST-001/);
 });
+
+test("Calendario consulta Meta de forma autenticada y muestra conciliación sin crear envíos",()=>{
+ const calendar=read("app/calendario/page.tsx");
+ const component=read("components/MetaReconciliation.tsx");
+ const proxy=read("app/api/meta/publicar/route.ts");
+ assert.match(calendar,/await requireEditor\(\)/);
+ assert.match(calendar,/MetaReconciliation/);
+ assert.match(calendar,/new Date\(m.social_scheduled_at\).getTime\(\)>Date.now\(\)/);
+ assert.match(component,/scheduled=1/);
+ assert.match(component,/Coincidencia|coinciden|coincide|CONFLICTO/);
+ assert.match(component,/Instagram: Meta Graph no ofrece en esta conexión una lista equivalente/);
+ assert.match(component,/No se pudo verificar la programación/);
+ assert.match(component,/Meta Business Suite/);
+ assert.match(proxy,/verifyEditor\(\)/);
+ assert.match(proxy,/args.set\("scheduled","1"\)/);
+ assert.doesNotMatch(component,/fetch\([^\n]*method:"POST"/);
+});

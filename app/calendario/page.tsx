@@ -1,6 +1,7 @@
 import {Shell} from "@/components/Shell";
 import {requireEditor} from "@/lib/access";
 import {itemsList,visibleNow} from "@/lib/data";
+import {MetaReconciliation} from "@/components/MetaReconciliation";
 
 export const dynamic="force-dynamic";
 const dateCO=(s:string|null)=>s?new Date(s).toLocaleString("es-CO",{dateStyle:"full",timeStyle:"short",timeZone:"America/Bogota"}):"Sin fecha";
@@ -8,7 +9,7 @@ export default async function Calendario(){
  const user=await requireEditor();
  const items=await itemsList();
  const scheduled=items.filter(x=>x.state==="scheduled"&&!visibleNow(x)).sort((a,b)=>String(a.scheduled_at).localeCompare(String(b.scheduled_at)));
- const plannedSocial=items.filter(m=>m.kind==="mensaje"&&m.social_scheduled_at&&m.social_state.includes("PROGRAMADO")).sort((a,b)=>String(a.social_scheduled_at).localeCompare(String(b.social_scheduled_at)));
+ const plannedSocial=items.filter(m=>m.kind==="mensaje"&&m.state==="scheduled"&&m.social_scheduled_at&&new Date(m.social_scheduled_at).getTime()>Date.now()).sort((a,b)=>String(a.social_scheduled_at).localeCompare(String(b.social_scheduled_at)));
  const awaitingMeta=items.filter(m=>m.kind==="mensaje"&&m.state==="scheduled"&&!m.social_scheduled_at&&m.scheduled_at).sort((a,b)=>String(a.scheduled_at).localeCompare(String(b.scheduled_at)));
  const metaTarget=(webTime:string|null)=>webTime?new Date(new Date(webTime).getTime()+300000).toISOString():null;
  return <Shell section="Calendario" email={user.email||"Dirección"}>
@@ -20,5 +21,6 @@ export default async function Calendario(){
     {awaitingMeta.map(m=><div className="calendar-item" key={m.code}><span className="calendar-day">{metaTarget(m.scheduled_at)?new Date(metaTarget(m.scheduled_at)!).toLocaleDateString("es-CO",{day:"2-digit",month:"short",timeZone:"America/Bogota"}):"—"}</span><div><span className="item-code">{m.code}</span><h3>{m.title}</h3><p>{dateCO(metaTarget(m.scheduled_at))} · Fecha objetivo; <strong>todavía no programado en Meta</strong></p><p>Historia prevista: 15 minutos después de la publicación principal.</p></div></div>)}
     <div className="source-note">Las fechas objetivo de los mensajes pendientes en Meta son una referencia editorial; no se han enviado ni programado en Facebook e Instagram. La revista ya tiene su propia publicación automática fijada cinco minutos antes.</div>
   </section></div>
+  <MetaReconciliation planned={plannedSocial.map(m=>({code:m.code,title:m.title,socialAt:m.social_scheduled_at!,socialState:m.social_state}))}/>
  </Shell>;
 }
