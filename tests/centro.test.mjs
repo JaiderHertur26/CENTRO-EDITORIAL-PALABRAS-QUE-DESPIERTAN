@@ -387,3 +387,15 @@ test("Una casilla marcada sin guardar no se presenta como aprobacion persistida 
  assert.match(ui,/Aprobación sin guardar: pulsa «Guardar borrador privado»/);
  assert.match(ui,/channel.endsWith\("_story"\)\?storyApprovalStored:feedApprovalStored/);
 });
+
+test("Confirmación Business independiente de aprobación y envío, con registro explícito",()=>{
+ const ui=read("components/MetaComposer.tsx");
+ assert.match(ui,/instagramBusinessConfirmed:false/);
+ assert.match(ui,/Confirmo que @palabrasquedespiertan es una cuenta de empresa \(Business\)/);
+ assert.match(ui,/businessOwnerConfirmationStored=/);
+ assert.match(ui,/Confirmación Business.*todavía NO se ha guardado|confirmación Business está marcada pero todavía NO se ha guardado/);
+ assert.match(ui,/Meta validará la elegibilidad en el envío/);
+ assert.match(ui,/INSTAGRAM_BUSINESS_OWNER_CONFIRMATION_REQUIRED/);
+ assert.match(ui,/window.confirm/);
+ assert.match(ui,/!!record\|\|checking/);
+});

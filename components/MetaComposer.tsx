@@ -10,6 +10,7 @@ type Draft={
  version:1;id:string;title:string;reference:string;createdAt:string;updatedAt:string;
  contentApproved:boolean;approvalAt:string|null;
  storyApproved?:boolean;storyApprovalAt?:string|null;
+ instagramBusinessConfirmed?:boolean;instagramBusinessConfirmedAt?:string|null;
  channels:Record<ChannelName,Channel>;
  media:{feed:MediaInfo|null;story:MediaInfo|null};
 };
@@ -42,7 +43,8 @@ const readableReason=(code:string)=>{
   META_AUTHORIZATION_MISSING:"No hay autorización guardada.",
   NOT_APPROVED_TEST:"Solo puede enviarse el borrador oficial TEST-001 aprobado.",
   FACEBOOK_STORY_BUSINESS_PERMISSION_REQUIRED:"Meta exige autorización de negocio para historias de Facebook con token de usuario del sistema.",
-  INSTAGRAM_STORIES_BUSINESS_REQUIRED:"Meta no ha confirmado que Instagram sea una cuenta Business; las historias no pueden enviarse.",
+  INSTAGRAM_STORIES_BUSINESS_REQUIRED:"Meta identifica Instagram como una cuenta que no es Business. Cambia el tipo desde Instagram para habilitar historias.",
+  INSTAGRAM_BUSINESS_OWNER_CONFIRMATION_REQUIRED:"Instagram está identificada, pero esta API no devuelve el tipo Business. Confirma que es una cuenta de empresa en el control editorial y guarda.",
   SCHEDULED_ITEM_NOT_ELIGIBLE:"Esta prueba no permite programaciones; utiliza el modo manual."
  };
  return names[code]||"Comprobación no completada ("+code+").";
@@ -81,6 +83,7 @@ function fresh():Draft{
  const make=(enabled:boolean,copy=""):Channel=>({enabled,copy,mode:"manual",scheduledAt:null});
  return {id:crypto.randomUUID(),version:1,title:"",reference:"",
   createdAt:date,updatedAt:"",contentApproved:false,approvalAt:null,storyApproved:false,storyApprovalAt:null,
+  instagramBusinessConfirmed:false,instagramBusinessConfirmedAt:null,
   channels:{
    facebook_feed:make(true),instagram_feed:make(true),
    facebook_story:make(false),instagram_story:make(false)
@@ -288,6 +291,7 @@ export function MetaComposer({instagramAccountType,autoOpenTest=false}:{instagra
    JSON.stringify(draft.channels[key])===JSON.stringify(savedBaseline.channels[key]));
  const storyReady=hasStory&&!!draft.media.story&&!files.story&&storySavedAndUnchanged;
  const storyApprovalStored=draft.storyApproved===true&&savedBaseline?.storyApproved===true&&!!savedBaseline.storyApprovalAt&&storySavedAndUnchanged;
+ const businessOwnerConfirmationStored=draft.instagramBusinessConfirmed===true&&savedBaseline?.instagramBusinessConfirmed===true&&!!savedBaseline.instagramBusinessConfirmedAt&&storySavedAndUnchanged;
  const feedApprovalStored=draft.contentApproved===true&&savedBaseline?.contentApproved===true&&!!savedBaseline.approvalAt;
  return <div className="meta-publisher">
   {draft.id==="8077d038-98eb-4729-abe5-425a26267460"&&<section className="section-card meta-publisher-quickstart">
@@ -380,6 +384,15 @@ export function MetaComposer({instagramAccountType,autoOpenTest=false}:{instagra
       {!storyReady&&<p className="meta-publisher-help">Para aprobar historias: activa los destinos deseados, guarda el borrador y confirma la imagen 9:16. Solo después de guardar los cambios se habilitará la aprobación.</p>}
       {draft.storyApproved&&!storyApprovalStored&&<p className="meta-publisher-error" role="status"><AlertCircle size={16}/>La casilla está marcada, pero todavía NO has guardado la aprobación. Pulsa «Guardar borrador privado» para registrarla.</p>}
       {storyApprovalStored&&draft.storyApprovalAt&&<p className="meta-publisher-help">Historias aprobadas y guardadas: {dateCO(draft.storyApprovalAt)}.</p>}
+      {draft.channels.instagram_story.enabled&&instagramAccountType!=="BUSINESS"&&<>
+       <label className="meta-publisher-approval"><input type="checkbox" checked={draft.instagramBusinessConfirmed===true}
+        disabled={!storyReady||!storyApprovalStored||busy||instagramAccountType==="CREATOR"}
+        onChange={e=>change(old=>({...old,instagramBusinessConfirmed:e.target.checked,instagramBusinessConfirmedAt:null}))}/>
+        <span><strong>Confirmo que @palabrasquedespiertan es una cuenta de empresa (Business) en Instagram</strong>
+         <small>Verifiqué el tipo en las herramientas profesionales de Instagram. Esta declaración de la dirección se guarda por separado porque el acceso Facebook Login no devuelve siempre account_type. Meta decidirá si la cuenta puede publicar Stories.</small></span></label>
+       {draft.instagramBusinessConfirmed&&!businessOwnerConfirmationStored&&<p className="meta-publisher-error" role="status"><AlertCircle size={16}/>La confirmación Business está marcada pero todavía NO se ha guardado. Guarda el borrador antes de comprobar permisos.</p>}
+       {businessOwnerConfirmationStored&&<p className="meta-publisher-help">Cuenta Business confirmada por la dirección y guardada: {dateCO(draft.instagramBusinessConfirmedAt||null)}. Meta comprobará la elegibilidad al intentar publicar.</p>}
+      </>}
       <div className="meta-publisher-save">
        <button disabled={busy} className="gold-button" onClick={()=>void save()}><Save size={16}/>{busy?"Guardando…":"Guardar borrador privado"}</button>
        <span>Guardar no publica <LockKeyhole size={14}/></span>
@@ -406,7 +419,7 @@ export function MetaComposer({instagramAccountType,autoOpenTest=false}:{instagra
         ?"Cuenta Business confirmada por Meta"
         :readiness.storyAccounts.instagram.type
          ?"Meta identifica la cuenta como "+readiness.storyAccounts.instagram.type+"; revisa su categoría"
-         :"Meta aún no devuelve el tipo Business. Confírmalo desde la configuración profesional de Instagram antes de publicar historias."}</p>
+         :"La cuenta de Instagram está identificada, pero Meta no entrega el tipo por esta conexión. Confirma en la aplicación que sea Business y registra la declaración de la dirección en Control de aprobación."}</p>
        <p>Facebook: {readiness.storyAccounts.facebook.canAttemptStories
         ?"Página identificada y rol válido; la entrega de historias requiere una prueba real"
         :"La página o sus permisos no se pudieron comprobar para historias."}
@@ -423,7 +436,7 @@ export function MetaComposer({instagramAccountType,autoOpenTest=false}:{instagra
          <strong>{platform}</strong>
          {record?<p>Registro: {record.status==="published"?"Publicado":record.status==="needs_review"?"Necesita revisión":record.status} · {dateCO(record.updatedAt)}</p>:<p>Sin envío registrado</p>}
          {!record&&<p className="meta-publisher-readiness">{channel.endsWith("_story")&&draft.storyApproved&&!storyApprovalStored?"Aprobación sin guardar: pulsa «Guardar borrador privado» antes de comprobar permisos.":checking?"Comprobando permisos…":
-          readiness?.channels[channel]?.ready?"Verificación previa: lista":
+          readiness?.channels[channel]?.ready?(channel==="instagram_story"&&businessOwnerConfirmationStored&&readiness.storyAccounts?.instagram.type!=="BUSINESS"?"Verificación previa: lista por declaración Business de la dirección; Meta validará la elegibilidad en el envío.":"Verificación previa: lista"):
           readableReason(readiness?.channels[channel]?.reason||"META_PREFLIGHT_UNAVAILABLE")}</p>}
          {record?.metaPostId&&<small>Meta ID: {record.metaPostId}</small>}
          {record?.permalink&&/^https:\/\//.test(record.permalink)&&<a href={record.permalink} target="_blank" rel="noreferrer">Ver publicación real</a>}
