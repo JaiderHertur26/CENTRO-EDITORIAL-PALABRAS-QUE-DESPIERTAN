@@ -43,7 +43,7 @@ async function vaultRequest(method:"GET"|"POST",body?:unknown){
  if(!response.ok)throw Error("Meta Vault unavailable");
  return response.json() as Promise<Record<string,unknown>>;
 }
-export type MetaVaultStatus={ready:boolean;connected:boolean;scopes:string[];at:string|null;verifiedAccount:boolean;username?:string|null;expiresAt?:number|null;verificationState?:string;lastVerifiedAt?:string|null;unavailable?:boolean};
+export type MetaVaultStatus={ready:boolean;connected:boolean;scopes:string[];at:string|null;verifiedAccount:boolean;username?:string|null;expiresAt?:number|null;verificationState?:string;lastVerifiedAt?:string|null;facebookPageVerified?:boolean;facebookPageId?:string|null;facebookPageName?:string|null;facebookCanCreateContent?:boolean;facebookVerificationState?:string;lastFacebookVerifiedAt?:string|null;unavailable?:boolean};
 export async function metaVaultStatus():Promise<MetaVaultStatus>{
  try{
   if(!metaOauthReady())return {ready:false,connected:false,scopes:[],at:null,verifiedAccount:false};
@@ -57,7 +57,13 @@ export async function metaVaultStatus():Promise<MetaVaultStatus>{
    username:typeof status.username==="string"?status.username:null,
    verificationState:typeof status.verificationState==="string"?status.verificationState:"unverified",
    expiresAt:typeof status.expiresAt==="number"?status.expiresAt:null,
-   lastVerifiedAt:typeof status.lastVerifiedAt==="string"?status.lastVerifiedAt:null
+   lastVerifiedAt:typeof status.lastVerifiedAt==="string"?status.lastVerifiedAt:null,
+   facebookPageVerified:status.facebookPageVerified===true,
+   facebookPageId:typeof status.facebookPageId==="string"?status.facebookPageId:null,
+   facebookPageName:typeof status.facebookPageName==="string"?status.facebookPageName:null,
+   facebookCanCreateContent:status.facebookCanCreateContent===true,
+   facebookVerificationState:typeof status.facebookVerificationState==="string"?status.facebookVerificationState:"unverified",
+   lastFacebookVerifiedAt:typeof status.lastFacebookVerifiedAt==="string"?status.lastFacebookVerifiedAt:null
   };
  }catch{return {ready:metaOauthReady(),connected:false,scopes:[],at:null,verifiedAccount:false,unavailable:true};}
 }

@@ -206,7 +206,7 @@ test("Integraciones Meta refleja la autorización real y separa permisos de iden
  assert.match(page,/authorization\.connected/);
  assert.match(page,/authorization\.verifiedAccount/);
  assert.match(page,/authorization\.username==="palabrasquedespiertan"/);
- assert.match(page,/hasAccess\?facebookGranted\?"Instagram: concedidos; Facebook: tres permisos concedidos/);
+ assert.match(page,/hasAccess\?facebookGranted\?facebookVerified\?/);
  assert.match(page,/Facebook: pendiente/);
  assert.match(page,/Publicación automática inactiva/);
  assert.match(page,/Meta no respondió a la verificación de identidad/);
@@ -230,4 +230,15 @@ test("Actualización de permisos Meta sin reemplazar un token válido por una au
  const validate=oauth.indexOf("if(required.some(");
  const save=oauth.indexOf('await vaultRequest("POST"');
  assert.ok(validate>0&&save>validate,"No guardar token nuevo si faltan permisos");
+});
+
+test("Facebook tiene verificación propia y no se confunde con los cinco permisos concedidos",()=>{
+ const panel=read("app/integraciones/page.tsx");
+ const api=read("lib/meta-oauth.ts");
+ assert.match(panel,/facebookVerified=facebookGranted&&authorization\.facebookPageVerified===true/);
+ assert.match(panel,/facebookCanPost=facebookVerified&&authorization\.facebookCanCreateContent===true/);
+ assert.match(panel,/Falta la prueba controlada antes de publicar/);
+ assert.match(panel,/Permisos recibidos · página por verificar/);
+ assert.match(api,/facebookPageVerified:status\.facebookPageVerified===true/);
+ assert.match(api,/facebookCanCreateContent:status\.facebookCanCreateContent===true/);
 });
