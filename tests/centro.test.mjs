@@ -334,3 +334,15 @@ test("Centro Editorial solo permite TEST001 con preflight listo y doble confirma
  assert.match(api,/args.set\("preflight","1"\)/);
  assert.match(api,/await verifyEditor\(\)/);
 });
+
+test("Cuatro destinos Meta con historias condicionadas y sin cron activo",()=>{
+ const src=read("components/MetaComposer.tsx");
+ const page=read("app/publicar/page.tsx");
+ assert.match(src,/\["facebook_feed","instagram_feed","facebook_story","instagram_story"\] as const/);
+ assert.match(src,/INSTAGRAM_STORIES_BUSINESS_REQUIRED/);
+ assert.match(src,/FACEBOOK_STORY_BUSINESS_PERMISSION_REQUIRED/);
+ assert.match(src,/readiness\?\.channels\[channel\]\?\.ready/);
+ assert.match(src,/window.confirm/);
+ assert.match(page,/programación automática continúa desactivada/);
+ assert.doesNotMatch(src,/setInterval|setTimeout\(.*publishTest|crons\//);
+});

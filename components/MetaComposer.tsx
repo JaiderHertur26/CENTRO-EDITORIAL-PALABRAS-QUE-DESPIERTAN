@@ -35,7 +35,10 @@ const readableReason=(code:string)=>{
   IMAGE_NOT_REACHABLE:"Meta no puede recuperar la imagen temporal.",
   META_AUTHORIZATION_INVALID:"El token de Meta ha vencido o no es válido.",
   META_AUTHORIZATION_MISSING:"No hay autorización guardada.",
-  NOT_APPROVED_TEST:"Solo puede enviarse el borrador oficial TEST-001 aprobado."
+  NOT_APPROVED_TEST:"Solo puede enviarse el borrador oficial TEST-001 aprobado.",
+  FACEBOOK_STORY_BUSINESS_PERMISSION_REQUIRED:"Meta exige autorización de negocio para historias de Facebook con token de usuario del sistema.",
+  INSTAGRAM_STORIES_BUSINESS_REQUIRED:"Meta no ha confirmado que Instagram sea una cuenta Business; las historias no pueden enviarse.",
+  SCHEDULED_ITEM_NOT_ELIGIBLE:"Esta prueba no permite programaciones; utiliza el modo manual."
  };
  return names[code]||"Comprobación no completada ("+code+").";
 };
@@ -212,10 +215,11 @@ export function MetaComposer({instagramAccountType}:{instagramAccountType:string
   }catch(e){setError(e instanceof Error?e.message:"Error al guardar el borrador")}
   finally{setBusy(false)}
  }
- async function publishTest(channel:"facebook_feed"|"instagram_feed"){
+ async function publishTest(channel:ChannelName){
   if(!draft||!revision||!liveConsent||publishing||busy)return;
   if(draft.reference!=="TEST-001"||!draft.contentApproved||draft.channels[channel].mode!=="manual")return;
-  if(!window.confirm("ESTO PUBLICARÁ realmente TEST-001 en "+(channel==="facebook_feed"?"la fanpage Facebook":"Instagram")+". Se registrará un envío irreversible y no se podrá repetir. ¿Confirmas el envío?"))return;
+  const target=(channel.startsWith("facebook_")?"Facebook":"Instagram")+(channel.endsWith("_story")?" (historia)":" (feed)");
+  if(!window.confirm("ESTO PUBLICARÁ REALMENTE TEST-001 en "+target+". Se registrará un envío irreversible y no se podrá repetir. ¿Confirmas el envío?"))return;
   setPublishing(channel);setError("");setMessage("");
   try{
    const response=await fetch("/api/meta/publicar",{
@@ -226,7 +230,7 @@ export function MetaComposer({instagramAccountType}:{instagramAccountType:string
    if(data.receipt){
     setDeliveries(old=>({...old,[channel]:data.receipt}));
     if(data.receipt.status==="published"){
-     setMessage("Publicación confirmada por Meta en "+(channel==="facebook_feed"?"Facebook":"Instagram")+". Identificador registrado.");
+     setMessage("Publicación confirmada por Meta en "+(channel.startsWith("facebook_")?"Facebook":"Instagram")+(channel.endsWith("_story")?" (historia)":" (feed)")+". Identificador registrado.");
     }else{
      setError("El intento quedó registrado como "+data.receipt.status+". No repitas el envío; comprueba su estado antes de continuar.");
     }
@@ -341,7 +345,7 @@ export function MetaComposer({instagramAccountType}:{instagramAccountType:string
     {draft.reference==="TEST-001"&&<section className="section-card">
      <div className="section-card-header"><div>
       <p className="kicker">PRUEBA REAL · DOBLE CONFIRMACIÓN</p><h2>Enviar TEST-001 a Meta</h2>
-      <p>Solo publicaciones de feed autorizadas de TEST-001. Cada red se envía por separado; nunca se reintenta automáticamente. Las historias y la agenda quedan excluidas.</p>
+      <p>Publicaciones de feed e historias de TEST-001 independientes. Las historias requieren imagen vertical y aprobación específica; Instagram debe ser Business y Facebook requiere los permisos adecuados. La programación automática continúa desactivada.</p>
      </div></div>
      <div className="meta-publisher-pad">
       <p className="meta-publisher-help">{draft.contentApproved?"Imagen y dos textos aprobados.":"Debes guardar y aprobar el contenido antes de cualquier envío."} La publicación será visible públicamente en la red elegida.</p>
@@ -353,9 +357,9 @@ export function MetaComposer({instagramAccountType}:{instagramAccountType:string
       <label className="meta-publisher-approval"><input type="checkbox" checked={liveConsent} disabled={!draft.contentApproved||busy||!!publishing} onChange={e=>setLiveConsent(e.target.checked)}/>
        <span><strong>Autorizo el envío real e inmediato de la prueba TEST-001</strong><small>Cada envío requiere además una confirmación explícita. No altera ART, PD ni publicaciones previamente programadas.</small></span></label>
       <div className="meta-publisher-actions">
-       {(["facebook_feed","instagram_feed"] as const).map(channel=>{
+       {(["facebook_feed","instagram_feed","facebook_story","instagram_story"] as const).map(channel=>{
         const record=deliveries[channel];
-        const platform=channel==="facebook_feed"?"Facebook":"Instagram";
+        const platform=(channel.startsWith("facebook_")?"Facebook":"Instagram")+(channel.endsWith("_story")?" · Historia":" · Feed");
         return <div key={channel} className="meta-publisher-delivery">
          <strong>{platform}</strong>
          {record?<p>Registro: {record.status==="published"?"Publicado":record.status==="needs_review"?"Necesita revisión":record.status} · {dateCO(record.updatedAt)}</p>:<p>Sin envío registrado</p>}
