@@ -35,13 +35,15 @@ async function vaultRequest(method:"GET"|"POST",body?:unknown){
  const bridge=process.env.META_BRIDGE_KEY||"";
  if(!/^[a-f0-9]{64}$/i.test(bridge))throw Error("Meta Vault not configured");
  const jwt=await editorToken();
- const response=await fetch(vault,{method,cache:"no-store",signal:AbortSignal.timeout(12000),
-  headers:{"Authorization":"Bearer "+jwt,"X-PQD-Meta-Bridge":bridge,...(method==="POST"?{"Content-Type":"application/json"}:{})},
+ const response=await fetch(vault,{method,cache:"no-store",signal:AbortSignal.timeout(23000),
+  headers:{"Authorization":"Bearer "+jwt,"X-PQD-Meta-Bridge":bridge,
+   ...(method==="GET"&&metaOauthReady()?{"X-PQD-Meta-App-Authorization":process.env.META_APP_ID+"|"+process.env.META_APP_SECRET}:{}),
+   ...(method==="POST"?{"Content-Type":"application/json"}:{})},
   ...(body===undefined?{}:{body:JSON.stringify(body)})});
  if(!response.ok)throw Error("Meta Vault unavailable");
  return response.json() as Promise<Record<string,unknown>>;
 }
-export type MetaVaultStatus={ready:boolean;connected:boolean;scopes:string[];at:string|null;verifiedAccount:boolean;unavailable?:boolean};
+export type MetaVaultStatus={ready:boolean;connected:boolean;scopes:string[];at:string|null;verifiedAccount:boolean;username?:string|null;expiresAt?:number|null;verificationState?:string;lastVerifiedAt?:string|null;unavailable?:boolean};
 export async function metaVaultStatus():Promise<MetaVaultStatus>{
  try{
   if(!metaOauthReady())return {ready:false,connected:false,scopes:[],at:null,verifiedAccount:false};
@@ -51,7 +53,11 @@ export async function metaVaultStatus():Promise<MetaVaultStatus>{
    connected:status.connected===true,
    scopes:Array.isArray(status.scopes)?status.scopes.filter((x):x is string=>typeof x==="string"):[],
    at:typeof status.at==="string"?status.at:null,
-   verifiedAccount:status.verifiedAccount===true
+   verifiedAccount:status.verifiedAccount===true,
+   username:typeof status.username==="string"?status.username:null,
+   verificationState:typeof status.verificationState==="string"?status.verificationState:"unverified",
+   expiresAt:typeof status.expiresAt==="number"?status.expiresAt:null,
+   lastVerifiedAt:typeof status.lastVerifiedAt==="string"?status.lastVerifiedAt:null
   };
  }catch{return {ready:metaOauthReady(),connected:false,scopes:[],at:null,verifiedAccount:false,unavailable:true};}
 }

@@ -199,3 +199,18 @@ test("Las tres variables Meta se validan en el servidor sin exponer claves",()=>
  assert.match(panel,/verifyMetaAppCredentials\(\)/);
  assert.doesNotMatch(panel,/(?:value|href)=\{process\.env\./);
 });
+
+test("Integraciones Meta refleja la autorización real y separa permisos de identidad",()=>{
+ const page=read("app/integraciones/page.tsx");
+ const oauth=read("lib/meta-oauth.ts");
+ assert.match(page,/authorization\.connected/);
+ assert.match(page,/authorization\.verifiedAccount/);
+ assert.match(page,/authorization\.username==="palabrasquedespiertan"/);
+ assert.match(page,/hasAccess\?"Instagram: acceso básico y publicación orgánica concedidos/);
+ assert.match(page,/Facebook: pendiente/);
+ assert.match(page,/Publicación automática inactiva/);
+ assert.match(page,/Meta no respondió a la verificación de identidad/);
+ assert.match(oauth,/X-PQD-Meta-App-Authorization/);
+ assert.match(oauth,/verifiedAccount:status\.verifiedAccount===true/);
+ assert.doesNotMatch(page,/access_token|META_APP_SECRET|SUPABASE_SECRET_KEY/);
+});
