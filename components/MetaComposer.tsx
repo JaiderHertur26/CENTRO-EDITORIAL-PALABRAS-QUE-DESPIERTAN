@@ -16,6 +16,29 @@ type ResponseDraft={draft?:Draft;drafts?:Draft[];error?:string;ok?:boolean;limit
 type DeliveryRecord={status:"reserved"|"media_prepared"|"publishing"|"published"|"rejected"|"needs_review";
  channel:ChannelName;updatedAt:string;metaPostId:string|null;permalink:string|null;reason:string|null;};
 type Deliveries=Partial<Record<ChannelName,DeliveryRecord|null>>;
+type ReadinessResult={ready:boolean;reason:string;instagramAccountType?:string|null};
+type PublishReadiness={revision:string;channels:Partial<Record<ChannelName,ReadinessResult>>}|null;
+const readableReason=(code:string)=>{
+ const names:Record<string,string>={
+  READY:"La conexión permite intentar una publicación real.",
+  CONTENT_NOT_APPROVED:"Falta aprobar y guardar esta pieza.",
+  INSTAGRAM_NOT_VERIFIED:"La cuenta de Instagram no ha superado la verificación.",
+  INSTAGRAM_SCOPES_MISSING:"Faltan permisos de Instagram.",
+  FACEBOOK_SCOPES_MISSING:"Faltan permisos de publicación en Facebook.",
+  FACEBOOK_PAGE_TOKEN_NOT_FOUND:"Meta no entrega el token operativo de la página.",
+  FACEBOOK_PAGE_NOT_VERIFIED:"La página de Facebook aún no está verificada.",
+  FACEBOOK_PUBLISH_PERMISSION_MISSING:"Meta no reconoce el rol para publicar en Facebook.",
+  DELIVERY_ALREADY_RESERVED:"Ya existe un intento registrado; se bloquea para evitar duplicados.",
+  META_PREFLIGHT_UNAVAILABLE:"No se pudo comprobar ahora la conexión con Meta.",
+  APPROVED_JPEG_REQUIRED:"La imagen debe estar guardada en formato JPG.",
+  IMAGE_MISSING:"No está disponible la imagen aprobada.",
+  IMAGE_NOT_REACHABLE:"Meta no puede recuperar la imagen temporal.",
+  META_AUTHORIZATION_INVALID:"El token de Meta ha vencido o no es válido.",
+  META_AUTHORIZATION_MISSING:"No hay autorización guardada.",
+  NOT_APPROVED_TEST:"Solo puede enviarse el borrador oficial TEST-001 aprobado."
+ };
+ return names[code]||"Comprobación no completada ("+code+").";
+};
 const channels:{key:ChannelName;label:string;platform:"fb"|"ig";slot:Slot;hint:string}[]=[
  {key:"facebook_feed",label:"Publicación de Facebook",platform:"fb",slot:"feed",hint:"Texto y fotografía en la fanpage"},
  {key:"instagram_feed",label:"Publicación de Instagram",platform:"ig",slot:"feed",hint:"Fotografía y leyenda del perfil"},
@@ -74,18 +97,27 @@ export function MetaComposer({instagramAccountType}:{instagramAccountType:string
  const [publishing,setPublishing]=useState<ChannelName|null>(null);
  const [liveConsent,setLiveConsent]=useState(false);
  const [deliveries,setDeliveries]=useState<Deliveries>({});
+ const [readiness,setReadiness]=useState<PublishReadiness>(null);
+ const [checking,setChecking]=useState(false);
  const [message,setMessage]=useState("");
  const [error,setError]=useState("");
  const [files,setFiles]=useState<{feed:File|null;story:File|null}>({feed:null,story:null});
  const [preview,setPreview]=useState<{feed:string;story:string}>({feed:"",story:""});
  useEffect(()=>{setDraft(fresh());void reload();},[]);
  useEffect(()=>{
-  if(!draft?.id||!revision){setDeliveries({});return}
+  if(!draft?.id||!revision){setDeliveries({});setReadiness(null);return}
   let cancelled=false;
-  fetch("/api/meta/publicar?id="+encodeURIComponent(draft.id),{cache:"no-store"})
+  const test=draft.id==="8077d038-98eb-4729-abe5-425a26267460";
+  if(test)setChecking(true);
+  setReadiness(null);
+  fetch("/api/meta/publicar?id="+encodeURIComponent(draft.id)+(test?"&preflight=1":""),{cache:"no-store"})
    .then(async r=>r.ok?await r.json():null)
-   .then(data=>{if(!cancelled)setDeliveries(data?.deliveries||{})})
-   .catch(()=>{if(!cancelled)setDeliveries({})});
+   .then(data=>{if(!cancelled){
+    setDeliveries(data?.deliveries||{});
+    setReadiness(data?.readiness?.revision===revision?data.readiness:null);
+   }})
+   .catch(()=>{if(!cancelled){setDeliveries({});setReadiness(null)}})
+   .finally(()=>{if(!cancelled)setChecking(false)});
   return ()=>{cancelled=true};
  },[draft?.id,revision]);
  useEffect(()=>{
@@ -202,6 +234,18 @@ export function MetaComposer({instagramAccountType}:{instagramAccountType:string
   }catch(e){setError(e instanceof Error?e.message:"Fallo al publicar; revisa los registros antes de repetir");}
   finally{setPublishing(null);setLiveConsent(false);}
  }
+ async function refreshReadiness(){
+  if(!draft||!revision||draft.id!=="8077d038-98eb-4729-abe5-425a26267460")return;
+  setChecking(true);setError("");
+  try{
+   const response=await fetch("/api/meta/publicar?id="+encodeURIComponent(draft.id)+"&preflight=1",{cache:"no-store"});
+   const data=await response.json();
+   if(!response.ok)throw Error(data.error||"No se pudo verificar Meta");
+   setDeliveries(data.deliveries||{});
+   setReadiness(data.readiness?.revision===revision?data.readiness:null);
+  }catch(e){setReadiness(null);setError(e instanceof Error?e.message:"Falló la comprobación de permisos");}
+  finally{setChecking(false);}
+ }
  function exportDraft(){
   if(!draft)return;
   const withoutMedia={...draft,media:{feed:draft.media.feed?{...draft.media.feed}:null,story:draft.media.story?{...draft.media.story}:null}};
@@ -301,6 +345,11 @@ export function MetaComposer({instagramAccountType}:{instagramAccountType:string
      </div></div>
      <div className="meta-publisher-pad">
       <p className="meta-publisher-help">{draft.contentApproved?"Imagen y dos textos aprobados.":"Debes guardar y aprobar el contenido antes de cualquier envío."} La publicación será visible públicamente en la red elegida.</p>
+      <div className="meta-publisher-actions">
+       <button type="button" disabled={checking||busy||!!publishing} onClick={()=>void refreshReadiness()}>
+        <ShieldCheck size={16}/>{checking?"Comprobando permisos de Meta…":"Volver a comprobar permisos sin publicar"}
+       </button>
+      </div>
       <label className="meta-publisher-approval"><input type="checkbox" checked={liveConsent} disabled={!draft.contentApproved||busy||!!publishing} onChange={e=>setLiveConsent(e.target.checked)}/>
        <span><strong>Autorizo el envío real e inmediato de la prueba TEST-001</strong><small>Cada envío requiere además una confirmación explícita. No altera ART, PD ni publicaciones previamente programadas.</small></span></label>
       <div className="meta-publisher-actions">
@@ -310,11 +359,14 @@ export function MetaComposer({instagramAccountType}:{instagramAccountType:string
         return <div key={channel} className="meta-publisher-delivery">
          <strong>{platform}</strong>
          {record?<p>Registro: {record.status==="published"?"Publicado":record.status==="needs_review"?"Necesita revisión":record.status} · {dateCO(record.updatedAt)}</p>:<p>Sin envío registrado</p>}
+         {!record&&<p className="meta-publisher-readiness">{checking?"Comprobando permisos…":
+          readiness?.channels[channel]?.ready?"Verificación previa: lista":
+          readableReason(readiness?.channels[channel]?.reason||"META_PREFLIGHT_UNAVAILABLE")}</p>}
          {record?.metaPostId&&<small>Meta ID: {record.metaPostId}</small>}
          {record?.permalink&&/^https:\/\//.test(record.permalink)&&<a href={record.permalink} target="_blank" rel="noreferrer">Ver publicación real</a>}
          {record?.reason&&<small>Código técnico: {record.reason}</small>}
          <button type="button" className="gold-button"
-          disabled={!!record||!draft.contentApproved||!liveConsent||busy||!!publishing||!draft.channels[channel].enabled||draft.channels[channel].mode!=="manual"||!revision}
+          disabled={!!record||checking||!readiness?.channels[channel]?.ready||readiness.revision!==revision||!draft.contentApproved||!liveConsent||busy||!!publishing||!draft.channels[channel].enabled||draft.channels[channel].mode!=="manual"||!revision}
           onClick={()=>void publishTest(channel)}>{publishing===channel?"Enviando…":record?"Envío bloqueado contra duplicación":"Publicar TEST-001 en "+platform}</button>
         </div>;
        })}

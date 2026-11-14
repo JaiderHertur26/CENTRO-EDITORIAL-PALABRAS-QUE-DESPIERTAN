@@ -314,10 +314,23 @@ test("Enviar TEST-001 requiere segunda confirmación y registra Meta IDs sin dup
  assert.match(comp,/liveConsent/);
  assert.match(comp,/PUBLICAR_TEST001_UNA_VEZ/);
  assert.match(comp,/record\?\./);
- assert.match(comp,/!!record\|\|!draft.contentApproved/);
+ assert.match(comp,/!!record\|\|checking\|\|!readiness/);
  assert.match(api,/await verifyEditor\(\)/);
  assert.match(api,/origin!==req.nextUrl.origin/);
  assert.match(bridge,/metaPublishBridge/);
  assert.match(bridge,/getSession/);
  assert.doesNotMatch(api,/graph.facebook.com|access_token/);
+});
+
+test("Centro Editorial solo permite TEST001 con preflight listo y doble confirmación",()=>{
+ const src=read("components/MetaComposer.tsx");
+ const api=read("app/api/meta/publicar/route.ts");
+ assert.match(src,/preflight=1/);
+ assert.match(src,/Volver a comprobar permisos sin publicar/);
+ assert.match(src,/readiness\?\.channels\[channel\]\?\.ready/);
+ assert.match(src,/window.confirm/);
+ assert.match(src,/liveConsent/);
+ assert.match(src,/!!record\|\|checking/);
+ assert.match(api,/args.set\("preflight","1"\)/);
+ assert.match(api,/await verifyEditor\(\)/);
 });
